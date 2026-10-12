@@ -2,7 +2,7 @@
 
 Schreibt die Live-Besucherzahlen von [visits.evofitness.de](https://visits.evofitness.de/) für alle EVO-Clubs in Deutschland mit, zeigt den Verlauf und sagt voraus, wie voll es in den nächsten Stunden und Tagen wird. Wetter, Feiertage, Brückentage und Schulferien fließen in die Prognose ein. Eine eigene Karte schlägt die beste Zeit fürs Training vor.
 
-**Live:** https://evo011.github.io/evo-visits/ (wird etwa alle 15 Minuten zwischen 5 und 23 Uhr aktualisiert)
+**Live:** https://evo011.github.io/evo-visits/ (Abruf zur vollen Viertelstunde zwischen 5 und 23 Uhr, die Seite steht 1–2 Minuten später)
 
 Nur Python 3.9+ mit Standardbibliothek, keine Pakete. Das Dashboard ist eine einzelne HTML-Datei ohne externe Abhängigkeiten.
 
@@ -25,7 +25,9 @@ Die 15 Clubs heißen in der API nur nach ihrem Viertel („EVO Unterbilk“). Di
 
 Das Repo ist öffentlich und enthält nur Code und Besucherzahlen, keine Secrets.
 
-- `.github/workflows/collect.yml` läuft per Cron `4,19,34,49 3-22 * * *`. Cron rechnet in UTC, die Stunden 3–22 decken 5–23 Uhr Berliner Zeit in Sommer- und Winterzeit ab. Das genaue Fenster (05:00–23:00 Berlin) prüft das Skript selbst (`collect --respect-window`). Eine concurrency-Gruppe verhindert überlappende Läufe.
+- `.github/workflows/collect.yml` setzt sich selbst fort: Der letzte Job jedes Laufs (`chain`) wartet bis zur nächsten vollen Viertelstunde (:00, :15, :30, :45) und startet den Workflow dann per `workflow_dispatch` neu. Das eingebaute `GITHUB_TOKEN` darf das, ein eigenes Token ist nicht nötig. Nachts schläft die Kette bis 05:00 Uhr (höchstens 5 Stunden am Stück, Grenze für Job-Laufzeiten). Laufen oder warten schon andere Läufe, setzt sie keinen neuen an, so entstehen keine doppelten Ketten.
+- Der Cron `0,15,30,45 3-22 * * *` ist nur Reserve, falls die Kette abreißt. GitHubs Cron-Trigger hat am 12.10.2026 über eine Stunde lang nicht ausgelöst, deshalb die Kette. Cron rechnet in UTC, die Stunden 3–22 decken 5–23 Uhr Berliner Zeit in Sommer- und Winterzeit ab. Das genaue Fenster (05:00–23:00 Berlin) prüft das Skript selbst (`collect --respect-window`). Eine concurrency-Gruppe verhindert überlappende Läufe.
+- Reißt die Kette ab und der Cron springt nicht an, genügt ein Start per Hand: `gh workflow run collect.yml -R evo011/evo-visits`.
 - Ablauf je Lauf: Monats-CSVs einlesen, abrufen, Wetter und Ferien auffrischen, `data/visits-YYYY-MM.csv` committen, statische Seite bauen (`export --out site`) und per `actions/deploy-pages` veröffentlichen.
 - Die CSVs sind die Quelle der Wahrheit. `data/visits.db` (SQLite) kommt nicht ins Git, sondern liegt im Actions-Cache, damit Wetter und Ferien nicht bei jedem Lauf neu geholt werden.
 - Schlägt der EVO-Abruf fehl, wird die Seite trotzdem mit dem letzten Stand deployt und der Lauf rot markiert.
