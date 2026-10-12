@@ -1,0 +1,102 @@
+# Faehrt etwa alle 15 Minuten (05-23 Uhr Berliner Zeit) den Sammler:
+# ruft Besucherzahlen der EVO-Visits-API ab, frischt Wetter- und
+# Ferienkontext auf, schreibt die Monats-CSVs (data/visits-YYYY-MM.csv)
+# als Commit zurueck und deployt die statische Seite nach GitHub Pages.
+# Die Cron-Zeiten sind UTC; das Abruffenster innerhalb der aktiven
+# Stunden prueft das Skript selbst (--respect-window). Damit das
+# Deploy klappt, muss in den Repo-Settings unter Pages die Quelle
+# "GitHub Actions" gewaehlt sein.
+
+name: collect
+
+on:
+  schedule:
+    - cron: "4,19,34,49 3-22 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      fetch_ok: ${{ steps.collect.outcome == 'success' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      # Wetter-/Ferien-Cache (data/visits.db, nicht im Git) ueberlebt so
+      # zwischen den Laeufen; die CSVs bleiben die Quelle der Wahrheit.
+      - uses: actions/cache/restore@v6
+        with:
+          path: data/visits.db
+          key: evo-db-${{ github.run_id }}
+          restore-keys: evo-db-
+
+      - name: CSVs importieren
+        run: python3 evo_visits.py import-csv
+
+      - name: Besucherzahlen abrufen
+        id: collect
+        continue-on-error: true
+        run: python3 evo_visits.py collect --respect-window --active-hours 05:00-23:00 --mode api
+
+      - name: Wetter und Ferien auffrischen
+        continue-on-error: true
+        run: python3 evo_visits.py context
+
+      - name: CSVs exportieren
+        run: python3 evo_visits.py export-csv
+
+      - name: Daten committen
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/visits-*.csv
+          if git diff --cached --quiet; then echo "keine neuen Daten"; exit 0; fi
+          git commit -m "data: Besucherzahlen $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M')"
+          for i in 1 2 3; do git pull --rebase --quiet && git push --quiet && exit 0; sleep 5; done
+          exit 1
+
+      - name: Seite exportieren
+        run: python3 evo_visits.py export --out site
+
+      - uses: actions/cache/save@v6
+        if: always()
+        with:
+          path: data/visits.db
+          key: evo-db-${{ github.run_id }}
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy nach GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: Abruf-Fehler kennzeichnen
+        if: needs.collect.outputs.fetch_ok != 'true'
+        run: |
+          echo "::error::Abruf bei EVO fehlgeschlagen, Seite zeigt den letzten Stand"
+          exit 1
