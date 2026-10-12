@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
-from .config import WEB_DIR, Config
+from .config import WEB_DIR, Config, in_active_window
 from .fetch import collect_once
 from .forecast import Profile, backtest, build_profile, get_tz
 from .store import Store
@@ -35,10 +35,7 @@ class Collector(threading.Thread):
         self.tz = get_tz(cfg.timezone)
 
     def in_active_window(self, ts: float) -> bool:
-        dt = datetime.fromtimestamp(ts, self.tz)
-        minute = dt.hour * 60 + dt.minute
-        start, end = self.cfg.active_window()
-        return start <= minute <= end if start <= end else (minute >= start or minute <= end)
+        return in_active_window(self.cfg, ts)
 
     def run_once(self) -> dict:
         with self.lock:

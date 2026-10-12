@@ -4,12 +4,30 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field, asdict
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:  # Python < 3.9 ohne tzdata-Paket
+    ZoneInfo = None
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_DIR / "data"
 WEB_DIR = PROJECT_DIR / "web"
+
+
+def in_active_window(cfg: "Config", ts: float) -> bool:
+    """True, wenn ts (Unix-Sekunden) in cfg.active_hours liegt (lokal, cfg.timezone)."""
+    try:
+        tz = ZoneInfo(cfg.timezone) if ZoneInfo is not None else None
+    except Exception:
+        tz = None
+    dt = datetime.fromtimestamp(ts, tz) if tz is not None else datetime.fromtimestamp(ts)
+    minute = dt.hour * 60 + dt.minute
+    start, end = cfg.active_window()
+    return start <= minute <= end if start <= end else (minute >= start or minute <= end)
 
 
 @dataclass

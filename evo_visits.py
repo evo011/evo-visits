@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """EVO Visits Tracker.
 
-  python3 evo_visits.py serve      Dashboard + Sammler starten (http://127.0.0.1:8765)
-  python3 evo_visits.py collect    einmal abrufen und speichern (fuer cron)
-  python3 evo_visits.py probe      Seite analysieren, Rohdaten nach data/probe/ schreiben
-  python3 evo_visits.py demo       Dashboard mit synthetischen Demo-Daten (eigene DB)
-  python3 evo_visits.py context    Wetter + Schulferien der Clubs einmal abrufen und cachen
-  python3 evo_visits.py launchd    macOS-Autostart (LaunchAgent-plist) ausgeben
+  python3 evo_visits.py serve          Dashboard + Sammler starten (http://127.0.0.1:8765)
+  python3 evo_visits.py collect        einmal abrufen und speichern (fuer cron)
+  python3 evo_visits.py probe          Seite analysieren, Rohdaten nach data/probe/ schreiben
+  python3 evo_visits.py demo           Dashboard mit synthetischen Demo-Daten (eigene DB)
+  python3 evo_visits.py context        Wetter + Schulferien der Clubs einmal abrufen und cachen
+  python3 evo_visits.py export-csv     Monats-Dateien visits-YYYY-MM.csv nach data/ schreiben
+  python3 evo_visits.py import-csv     Monats-Dateien aus data/ wieder einlesen
+  python3 evo_visits.py launchd        macOS-Autostart (LaunchAgent-plist) ausgeben
 """
 
 from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from evo.config import DATA_DIR, PROJECT_DIR, load_config
@@ -21,12 +24,17 @@ from evo.store import Store
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
-    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "launchd"])
+    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context",
+                                        "export-csv", "import-csv", "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
     ap.add_argument("--mode", choices=["auto", "static", "browser", "api"], help="Abrufstrategie")
     ap.add_argument("--no-collect", action="store_true", help="nur Dashboard, kein Sammler")
+    ap.add_argument("--respect-window", action="store_true",
+                    help="collect: nur innerhalb der aktiven Stunden abrufen")
+    ap.add_argument("--active-hours", help="Aktives Fenster als HH:MM-HH:MM (ueberschreibt config)")
+    ap.add_argument("--dir", type=Path, help="Verzeichnis fuer CSV-Export/-Import (Default: data/)")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -36,13 +44,23 @@ def main(argv: list[str]) -> int:
         cfg.interval_minutes = args.interval
     if args.mode:
         cfg.mode = args.mode
+    if args.active_hours:
+        cfg.active_hours = args.active_hours
 
     if args.command == "serve":
         from evo.server import serve
         serve(cfg, Store(cfg.db_path), collect=not args.no_collect)
     elif args.command == "collect":
+        from evo.config import in_active_window
         from evo.fetch import collect_once
-        res = collect_once(cfg, Store(cfg.db_path))
+        if args.respect_window and not in_active_window(cfg, time.time()):
+            print(f"Außerhalb des Abruffensters ({cfg.active_hours}), nichts abgerufen.")
+            return 0
+        try:
+            res = collect_once(cfg, Store(cfg.db_path))
+        except Exception as e:
+            print(f"Abruf fehlgeschlagen: {e}", file=sys.stderr)
+            return 1
         if res.source == "skipped:min-interval":
             print("Letzter Abruf vor weniger als 10 Minuten, übersprungen.")
         else:
@@ -76,6 +94,21 @@ def main(argv: list[str]) -> int:
                     print(f"  {source}: ok, {r['n']} Zeilen" + (" (aus Cache)" if r["cached"] else ""))
                 else:
                     print(f"  {source}: FEHLER, {r['error']}")
+    elif args.command == "export-csv":
+        from evo.csvstore import export_monthly
+        from evo.forecast import get_tz
+        directory = args.dir or DATA_DIR
+        changed = export_monthly(Store(cfg.db_path), directory, get_tz(cfg.timezone))
+        if changed:
+            for p in changed:
+                print(f" geschrieben: {p}")
+        else:
+            print("Keine Änderungen, keine Dateien geschrieben.")
+    elif args.command == "import-csv":
+        from evo.csvstore import import_dir
+        directory = args.dir or DATA_DIR
+        n = import_dir(Store(cfg.db_path), directory)
+        print(f"{n} Zeilen eingelesen aus {directory}")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))
