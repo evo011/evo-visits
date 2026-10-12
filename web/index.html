@@ -375,7 +375,7 @@ const bust = (url) => url + (url.includes("?") ? "&" : "?") + "v=" + (staticVers
 
 function staticPath(path) {
   const u = new URL(path, "http://x");
-  if (u.pathname === "/api/status") return bust("api/status.json");
+  if (u.pathname === "/api/status") return "api/status.json?t=" + Date.now();
   if (u.pathname === "/api/gyms") return bust("api/gyms.json");
   if (u.pathname === "/api/gym") {
     const entry = state.gyms.find((g) => g.gym === u.searchParams.get("gym"));
@@ -393,7 +393,10 @@ function staticPath(path) {
 async function api(path, opts) {
   let data;
   if (STATIC) {
-    data = await fetch(staticPath(path), opts).then((r) => r.json());
+    // status.json muss am GitHub-Pages-Cache vorbei immer frisch geladen werden
+    const isStatus = new URL(path, "http://x").pathname === "/api/status";
+    const fetchOpts = isStatus ? Object.assign({}, opts, { cache: "no-store" }) : opts;
+    data = await fetch(staticPath(path), fetchOpts).then((r) => r.json());
   } else {
     const r = await fetch(path, opts);
     data = await r.json();
@@ -1173,7 +1176,14 @@ async function loadGym() {
 
 async function refresh(full = true) {
   try {
-    const [status, gyms] = await Promise.all([api("/api/status"), api("/api/gyms")]);
+    let status, gyms;
+    if (STATIC) {
+      // Sequenziell: status liefert das neue v, damit gyms.json direkt mit der aktuellen Version geladen wird
+      status = await api("/api/status");
+      gyms = await api("/api/gyms");
+    } else {
+      [status, gyms] = await Promise.all([api("/api/status"), api("/api/gyms")]);
+    }
     state.status = status; state.gyms = gyms;
   } catch (e) { console.error(e); return; }
   renderStatus();
