@@ -106,8 +106,15 @@ button:disabled { opacity: .6; cursor: progress; }
 .tile .note { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
 .meter { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
 .meter > span { display: block; height: 100%; background: var(--series-1); border-radius: 3px; }
-.grid2 { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media (min-width: 900px) { .grid2 { grid-template-columns: 3fr 2fr; } }
+#bestCard .cols { display: grid; grid-template-columns: 1fr; gap: 0 28px; }
+@media (min-width: 900px) { #bestCard .cols { grid-template-columns: 1fr 1fr; } }
+#bestCard h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 12px 0 0; }
+.perfect { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; margin: 6px 0 10px; }
+.perfect .mini { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+#bestCard .best li { flex-wrap: wrap; row-gap: 4px; }
+#bestCard .best li.top b { font-weight: 800; }
+#bestCard .rgt { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#bestCard .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
 .card { margin-bottom: 12px; }
 .chart { position: relative; width: 100%; height: 280px; transition: opacity .2s; }
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -240,23 +247,39 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
       <div id="fxSources"></div>
     </div>
 
-    <div class="grid2">
-      <div class="card">
-        <h2>Ruhigste Zeitfenster</h2>
-        <p class="sub">Laut Prognose, je Tag das Fenster mit den wenigsten Leuten.</p>
-        <div class="inline-controls">
-          zwischen <select id="bestFrom"></select> und <select id="bestTo"></select> Uhr, Dauer
-          <select id="bestDur"><option value="60">60 min</option><option value="90">90 min</option><option value="120">2 Std</option></select>
+    <div class="card" id="bestCard">
+      <h2>Beste Zeit fürs Gym</h2>
+      <p class="sub">Wann du am meisten Platz hast – aus Prognose und Historie.</p>
+      <div class="inline-controls" id="bestControls">
+        <span class="seg" id="bestDays" role="group" aria-label="Wochentage"></span>
+        <span>Mo–Fr von <select id="bestWkFrom"></select> bis <select id="bestWkTo"></select> Uhr</span>
+        <span>Sa/So von <select id="bestWeFrom"></select> bis <select id="bestWeTo"></select> Uhr</span>
+        <span>Dauer <span class="seg" id="bestDur">
+          <button type="button" data-dur="60">60 min</button>
+          <button type="button" data-dur="90">90 min</button>
+          <button type="button" data-dur="120">120 min</button>
+        </span></span>
+      </div>
+      <div class="perfect" id="perfect"></div>
+      <div class="cols">
+        <div>
+          <h3>Nächste 7 Tage</h3>
+          <ul class="best" id="nextList"></ul>
         </div>
-        <ul class="best" id="bestList"></ul>
+        <div>
+          <h3>Generell</h3>
+          <ul class="best" id="weeklyList"></ul>
+          <p class="mini" id="weeklyNote"></p>
+        </div>
       </div>
-      <div class="card">
-        <h2>Typische Woche</h2>
-        <p class="sub" id="heatSub">Durchschnitt je Wochentag und Stunde</p>
-        <div class="heat" id="heat" role="grid"></div>
-        <div class="scale"><span id="heatMin">0</span><span class="bar"></span><span id="heatMax"></span></div>
-        <details id="heatTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
-      </div>
+    </div>
+
+    <div class="card">
+      <h2>Typische Woche</h2>
+      <p class="sub" id="heatSub">Durchschnitt je Wochentag und Stunde</p>
+      <div class="heat" id="heat" role="grid"></div>
+      <div class="scale"><span id="heatMin">0</span><span class="bar"></span><span id="heatMax"></span></div>
+      <details id="heatTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
     </div>
 
     <div class="card">
@@ -285,10 +308,10 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("evo." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("evo." + k, JSON.stringify(v)); } catch {} },
 };
+const BEST_DEFAULTS = { wd: [true, true, true, true, true, true, true], wkFrom: 17, wkTo: 22, weFrom: 9, weTo: 19, dur: 60 };
 const state = {
   gym: store.get("gym", null), days: store.get("days", 7), horizon: store.get("horizon", 24),
-  bestFrom: store.get("bestFrom", 7), bestTo: store.get("bestTo", 21), bestDur: store.get("bestDur", 60),
-  status: null, gyms: [], data: null,
+  best: store.get("best", BEST_DEFAULTS), status: null, gyms: [], data: null, weekly: null,
 };
 
 const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -897,42 +920,172 @@ function renderHeat() {
   table($("#heatTable .tablewrap"), ["Stunde", ...WD], HEAT_HOURS.map((h) => [`${h}–${h + 1}`, ...d.heatmap.map((r) => r[h] == null ? "–" : nf(r[h]))]));
 }
 
-function renderBest() {
-  const d = state.data, list = $("#bestList");
-  list.textContent = "";
-  const nowMs = d.now * 1000;
-  const pts = d.forecast.filter((p) => p[1] != null && p[0] > nowMs);
-  if (pts.length < 2) { list.append(el("li", { class: "muted" }, "Noch zu wenig Daten für eine Prognose.")); return; }
-  const step = pts[1][0] - pts[0][0];
-  const n = Math.max(1, Math.round(state.bestDur * 60e3 / step));
-  const byDay = new Map();
-  for (const p of pts) { const k = new Date(p[0]).toDateString(); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(p); }
-  for (const [, dayPts] of [...byDay.entries()].slice(0, 7)) {
-    let best = null;
-    for (let i = 0; i + n <= dayPts.length; i++) {
-      const w = dayPts.slice(i, i + n);
-      const s = new Date(w[0][0]), endMs = w[n - 1][0] + step;
-      const e = new Date(endMs);
-      if (endMs - w[0][0] > n * step + 1) continue;
-      const startH = s.getHours() + s.getMinutes() / 60;
-      const endH = (e.getDate() !== s.getDate() ? 24 : 0) + e.getHours() + e.getMinutes() / 60;
-      if (startH < state.bestFrom || endH > state.bestTo) continue;
-      const avg = w.reduce((a, p) => a + p[1], 0) / n;
-      if (!best || avg < best.avg) best = { start: w[0][0], end: endMs, avg };
+function quantile(sorted, q) {
+  if (!sorted.length) return null;
+  const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+  return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+const wdTimes = (wd) => wd >= 5 ? [state.best.weFrom, state.best.weTo] : [state.best.wkFrom, state.best.wkTo];
+const fmtMin = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const dayLabel = (day) => WD[day.weekday] + " " + Number(day.date.slice(8, 10)) + "." + Number(day.date.slice(5, 7)) + ".";
+
+function bestForecastWindows(d) {
+  // Liefert je Prognosetag das Fenster mit dem kleinsten Mittel von est.
+  const nowMs = d.now * 1000, step = 15 * 60e3, n = state.best.dur / 15;
+  const byDate = new Map();
+  for (const p of d.forecast) {
+    const dt = new Date(p[0]);
+    const k = dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0");
+    if (!byDate.has(k)) byDate.set(k, []);
+    byDate.get(k).push(p);
+  }
+  const out = [];
+  for (const day of d.days || []) {
+    if (!state.best.wd[day.weekday]) continue;
+    const [fromH, toH] = day.holiday ? [state.best.weFrom, state.best.weTo] : wdTimes(day.weekday);
+    const pts = byDate.get(day.date) || [];
+    let win = null;
+    for (let i = 0; i + n <= pts.length; i++) {
+      const start = pts[i][0];
+      if (!(start > nowMs)) continue;
+      const dt = new Date(start), startMin = dt.getHours() * 60 + dt.getMinutes();
+      if (startMin < fromH * 60 || startMin + state.best.dur > toH * 60) continue;
+      let ok = true, sE = 0, sL = 0, sH = 0;
+      for (let j = i; j < i + n; j++) {
+        const p = pts[j];
+        if (p[1] == null || (j > i && p[0] - pts[j - 1][0] !== step)) { ok = false; break; }
+        sE += p[1]; sL += p[2]; sH += p[3];
+      }
+      if (!ok) continue;
+      const w = { start, end: start + state.best.dur * 60e3, avg: sE / n, lo: sL / n, hi: sH / n };
+      if (!win || w.avg < win.avg) win = w;
     }
-    const li = el("li");
-    if (best) {
-      li.append(el("span", { class: "when" }, `${fmtDay(best.start)}, ${fmtTime(best.start)}–${fmtTime(best.end)}`), el("b", {}, `~${nf(best.avg)} ${d.unit === "percent" ? "%" : "Pers."}`));
-    } else {
-      li.append(el("span", { class: "when" }, fmtDay(dayPts[0][0])), el("span", { class: "muted" }, "kein passendes Fenster"));
+    out.push({ day, win });
+  }
+  return out;
+}
+
+function bestWeeklyWindows() {
+  // Je Wochentag/Startzeit der p75 über die Wochen; gierig die besten 5 ohne Überlappung.
+  const wk = state.weekly;
+  if (!wk || !wk.days || !wk.days.length) return null;
+  const bin = wk.bin_minutes || 15, nSlots = state.best.dur / bin;
+  const cands = [];
+  for (let wd = 0; wd < 7; wd++) {
+    if (!state.best.wd[wd]) continue;
+    const [fromH, toH] = wdTimes(wd);
+    for (let startMin = fromH * 60; startMin + state.best.dur <= toH * 60; startMin += bin) {
+      const i0 = startMin / bin;
+      const perDate = [];
+      for (const day of wk.days) {
+        if (day.weekday !== wd) continue;
+        const vals = day.values || [];
+        let cnt = 0, sum = 0;
+        for (let j = i0; j < i0 + nSlots; j++) { const v = vals[j]; if (v != null) { cnt++; sum += v; } }
+        if (cnt >= 0.75 * nSlots) perDate.push(sum / cnt);
+      }
+      if (!perDate.length) continue;
+      perDate.sort((a, b) => a - b);
+      cands.push({ wd, startMin, endMin: startMin + state.best.dur, p75: quantile(perDate, 0.75), typ: quantile(perDate, 0.5), n: perDate.length });
     }
-    list.append(li);
+  }
+  cands.sort((a, b) => a.p75 - b.p75);
+  const picked = [];
+  for (const c of cands) {
+    if (picked.length >= 5) break;
+    if (picked.some((p) => p.wd === c.wd && c.startMin < p.endMin && p.startMin < c.endMin)) continue;
+    picked.push(c);
+  }
+  return picked;
+}
+
+function dayPills(day) {
+  const pills = [];
+  if (day.holiday) pills.push(el("span", { class: "pill" }, day.holiday));
+  if (day.school) pills.push(el("span", { class: "pill", title: day.school }, "Ferien"));
+  if (day.bridge) pills.push(el("span", { class: "pill" }, "Brückentag"));
+  return pills;
+}
+
+function renderBestCard() {
+  const d = state.data, unitS = d.unit === "percent" ? "%" : "Pers.";
+  const nextList = $("#nextList"), weeklyList = $("#weeklyList"), note = $("#weeklyNote"), pf = $("#perfect");
+  nextList.textContent = ""; weeklyList.textContent = ""; note.textContent = ""; pf.textContent = "";
+
+  // Nächste 7 Tage (Prognose)
+  const hasFc = d.forecast.some((p) => p[1] != null);
+  let bestFc = null;
+  if (hasFc) {
+    const rows = bestForecastWindows(d);
+    for (const { day, win } of rows) if (win && (!bestFc || win.avg < bestFc.win.avg)) bestFc = { day, win };
+    for (const { day, win } of rows) {
+      const li = el("li", win && bestFc && day.date === bestFc.day.date ? { class: "top" } : {});
+      li.append(el("span", { class: "when" }, dayLabel(day) + (win ? " · " + fmtTime(win.start) + "–" + fmtTime(win.end) : "")));
+      if (win) {
+        const rgt = el("span", { class: "rgt" });
+        rgt.append(el("b", {}, "~" + nf(win.avg) + " " + unitS), el("span", { class: "mini" }, nf(win.lo) + "–" + nf(win.hi)));
+        if (day.weather) {
+          const wx = el("span", { title: wxText(day.weather.code) });
+          wx.textContent = wxIcon(day.weather.code) + " " + Math.round(day.weather.tmax) + "°";
+          rgt.append(wx);
+        }
+        dayPills(day).forEach((p) => rgt.append(p));
+        li.append(rgt);
+      } else {
+        li.append(el("span", { class: "muted" }, "kein Fenster in deinem Zeitraum"));
+      }
+      nextList.append(li);
+    }
+  } else {
+    nextList.append(el("li", { class: "muted" }, "Noch zu wenig Daten für eine Prognose."));
+  }
+
+  // Generell (Historie)
+  let gen = null;
+  const picked = state.weekly ? bestWeeklyWindows() : null;
+  if (picked && picked.length) {
+    gen = picked[0];
+    for (const c of picked) {
+      const li = el("li");
+      li.append(el("span", { class: "when" }, WD[c.wd] + " " + fmtMin(c.startMin) + "–" + fmtMin(c.endMin)));
+      const rgt = el("span", { class: "rgt" });
+      rgt.append(el("b", {}, "typisch ~" + nf(c.typ)), el("span", { class: "mini" }, "meist unter " + nf(c.p75)));
+      rgt.append(el("span", { class: "mini" }, c.n + (c.n === 1 ? " Woche" : " Wochen")));
+      if (c.n < 4) rgt.append(el("span", { class: "pill", title: "weniger als 4 Wochen Daten" }, "vorläufig"));
+      li.append(rgt);
+      weeklyList.append(li);
+    }
+    note.textContent = "Feiertage und Brückentage sind ausgenommen. „Meist unter“ = in 3 von 4 Wochen.";
+    const ex = (state.weekly.excluded || []).slice(0, 4);
+    if (ex.length) note.textContent += " Ausgenommen: " + ex.map((e) => Number(e.date.slice(8, 10)) + "." + Number(e.date.slice(5, 7)) + ". (" + e.reason + ")").join(", ") + ".";
+  } else {
+    weeklyList.append(el("li", { class: "muted" }, "Noch keine abgeschlossenen Tage für diese Auswahl."));
+  }
+
+  // Die perfekte Zeit
+  if (bestFc) {
+    const { day, win } = bestFc;
+    pf.append(document.createTextNode("Perfekte Zeit: " + dayLabel(day) + ", " + fmtTime(win.start) + "–" + fmtTime(win.end) + " · ~" + nf(win.avg) + " " + (d.unit === "percent" ? "%" : "Personen") + " "));
+    if (day.weather) {
+      const wx = el("span", { title: wxText(day.weather.code) });
+      wx.textContent = wxIcon(day.weather.code);
+      pf.append(wx);
+    }
+    if (gen && gen.wd === day.weekday && gen.startMin === new Date(win.start).getHours() * 60 + new Date(win.start).getMinutes()) {
+      pf.append(el("span", { class: "mini" }, " · meist unter " + nf(gen.p75)));
+    }
+  } else if (gen) {
+    pf.append(document.createTextNode("Perfekte Zeit: " + WD[gen.wd] + " " + fmtMin(gen.startMin) + "–" + fmtMin(gen.endMin) + " · typisch ~" + nf(gen.typ) + " " + (d.unit === "percent" ? "%" : "Personen") + " "));
+    pf.append(el("span", { class: "mini" }, "(aus der Historie)"));
+  } else {
+    pf.textContent = "Noch zu wenig Daten.";
   }
 }
 
 function renderAll() {
   if (!state.data) return;
-  renderTiles(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBest(); renderOverview();
+  renderTiles(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -942,7 +1095,12 @@ async function loadGym() {
   if (!state.gym) return;
   document.body.classList.add("loading");
   try {
-    state.data = await api(`/api/gym?gym=${encodeURIComponent(state.gym)}&days=${state.days}`);
+    const name = encodeURIComponent(state.gym);
+    const [data, weekly] = await Promise.all([
+      api(`/api/gym?gym=${name}&days=${state.days}`),
+      api(`/api/weekly?gym=${name}`).catch(() => null),
+    ]);
+    state.data = data; state.weekly = weekly;
     renderAll();
   } catch (e) {
     console.error(e);
@@ -996,15 +1154,31 @@ function initControls() {
     state.horizon = Number(b.dataset.h); store.set("horizon", state.horizon); setPressed(hs, "h", state.horizon);
     if (state.data) { renderForecast(); }
   });
-  const from = $("#bestFrom"), to = $("#bestTo"), dur = $("#bestDur");
-  for (let h = 6; h <= 23; h++) { from.append(el("option", { value: h }, String(h))); to.append(el("option", { value: h }, String(h))); }
-  from.value = state.bestFrom; to.value = state.bestTo; dur.value = state.bestDur;
-  const upd = () => {
-    state.bestFrom = Number(from.value); state.bestTo = Number(to.value); state.bestDur = Number(dur.value);
-    store.set("bestFrom", state.bestFrom); store.set("bestTo", state.bestTo); store.set("bestDur", state.bestDur);
-    if (state.data) renderBest();
-  };
-  [from, to, dur].forEach((s) => s.addEventListener("change", upd));
+  const daysSeg = $("#bestDays"), durSeg = $("#bestDur");
+  WD.forEach((w, i) => daysSeg.append(el("button", { type: "button", "data-wd": String(i), "aria-pressed": String(state.best.wd[i]) }, w)));
+  const sel = {};
+  for (const [k, id] of [["wkFrom", "bestWkFrom"], ["wkTo", "bestWkTo"], ["weFrom", "bestWeFrom"], ["weTo", "bestWeTo"]]) {
+    sel[k] = $("#" + id);
+    for (let h = 6; h <= 23; h++) sel[k].append(el("option", { value: h }, String(h)));
+    sel[k].value = state.best[k];
+  }
+  durSeg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.dur) === state.best.dur)));
+  const saveBest = () => { store.set("best", state.best); if (state.data) renderBestCard(); };
+  daysSeg.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const i = Number(b.dataset.wd);
+    if (state.best.wd[i] && state.best.wd.filter(Boolean).length === 1) return;
+    state.best.wd[i] = !state.best.wd[i];
+    b.setAttribute("aria-pressed", String(state.best.wd[i]));
+    saveBest();
+  });
+  Object.keys(sel).forEach((k) => sel[k].addEventListener("change", () => { state.best[k] = Number(sel[k].value); saveBest(); }));
+  durSeg.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.best.dur = Number(b.dataset.dur);
+    durSeg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    saveBest();
+  });
   $("#collectBtn").addEventListener("click", async (e) => {
     const b = e.currentTarget; b.disabled = true; b.textContent = "Rufe ab …";
     try { await api("/api/collect", { method: "POST" }); } catch (err) { console.error(err); }
