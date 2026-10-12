@@ -4,7 +4,9 @@ Schreibt die Live-Besucherzahlen von [visits.evofitness.de](https://visits.evofi
 
 **Live:** https://evo011.github.io/evo-visits/ (Abruf zur vollen Viertelstunde zwischen 5 und 23 Uhr, die Seite steht 1–2 Minuten später)
 
-Nur Python 3.9+ mit Standardbibliothek, keine Pakete. Das Dashboard ist eine einzelne HTML-Datei ohne externe Abhängigkeiten.
+Nur Python 3.9+ mit Standardbibliothek, keine Pakete. Das Dashboard ist eine einzelne HTML-Datei ohne externe Abhängigkeiten. Die Schrift (Archivo, SIL Open Font License) liegt in `web/fonts/` und wird mit ausgeliefert, es gibt keine Anfragen an Google Fonts oder andere Dritte. Die Wetter-Icons stammen aus [Phosphor Icons](https://phosphoricons.com) (MIT) und sind als SVG-Sprite eingebettet.
+
+Das Design folgt einer Anzeigetafel: Kreide und Tinte, Grün für „gute Zeit“, Rot für „voll“. Oben steht ein Satz statt einer Kennzahl-Kachel („10 Leute in Unterbilk. Eher ruhig …“). Darunter zeigt das Belegungsband den Tag von 6 bis 23 Uhr als Viertelstunden-Striche: gemessen in Tinte, Prognose in Grau, das beste Fenster in Grün, per Tab für die nächsten 7 Tage.
 
 ![Dashboard mit Demo-Daten](docs/dashboard-demo.png)
 
