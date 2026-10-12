@@ -6,13 +6,16 @@
 # Stunden prueft das Skript selbst (--respect-window). Damit das
 # Deploy klappt, muss in den Repo-Settings unter Pages die Quelle
 # "GitHub Actions" gewaehlt sein.
+# Jeder Lauf setzt per workflow_dispatch den naechsten an
+# (GITHUB_TOKEN darf workflow_dispatch ausloesen), der Cron ist nur
+# Reserve.
 
 name: collect
 
 on:
   schedule:
-    # TEST 12.10.2026: alle 5 min, danach zurueck auf "4,19,34,49 3-22 * * *"
-    - cron: "*/5 * * * *"
+    # Reserve: startet die Kette neu, falls sie abreisst
+    - cron: "4,19,34,49 3-22 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -101,3 +104,41 @@ jobs:
         run: |
           echo "::error::Abruf bei EVO fehlgeschlagen, Seite zeigt den letzten Stand"
           exit 1
+
+  chain:
+    needs: [collect, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Naechsten Lauf ansetzen
+        shell: bash
+        run: |
+          set -euo pipefail
+          now=$(date +%s)
+          # naechster Termin :04/:19/:34/:49, mindestens 5 min Abstand
+          next=$(( (now / 900 + 1) * 900 + 240 ))
+          if [ $(( next - now )) -lt 300 ]; then next=$(( next + 900 )); fi
+          # nachts (23-05 Uhr Berlin) bis 04:59 schlafen, hoechstens 5 h am Stueck
+          h=$(TZ=Europe/Berlin date -d "@$next" +%-H)
+          if [ "$h" -ge 23 ] || [ "$h" -lt 5 ]; then
+            if [ "$h" -ge 23 ]; then day=tomorrow; else day=today; fi
+            target=$(TZ=Europe/Berlin date -d "$(TZ=Europe/Berlin date -d "$day" +%F) 04:59" +%s)
+            limit=$(( now + 18000 ))
+            next=$(( target < limit ? target : limit ))
+          fi
+          echo "naechster Lauf: $(TZ=Europe/Berlin date -d "@$next" '+%F %H:%M') Berlin"
+          sleep $(( next - now ))
+          # nur weiterketten, wenn nicht schon ein anderer Lauf wartet oder laeuft
+          others=$(gh run list -R "$GITHUB_REPOSITORY" --workflow collect.yml --limit 20 \
+            --json databaseId,status \
+            --jq "[.[] | select(.databaseId != ${GITHUB_RUN_ID} and (.status == \"queued\" or .status == \"in_progress\" or .status == \"pending\" or .status == \"waiting\" or .status == \"requested\"))] | length")
+          if [ "$others" -gt 0 ]; then
+            echo "es wartet schon ein Lauf, keine neue Kette"
+            exit 0
+          fi
+          gh workflow run collect.yml -R "$GITHUB_REPOSITORY" --ref main
