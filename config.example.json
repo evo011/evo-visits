@@ -1,0 +1,11 @@
+{
+  "url": "https://visits.evofitness.de/",
+  "interval_minutes": 10,
+  "active_hours": "05:30-23:30",
+  "timezone": "Europe/Berlin",
+  "port": 8765,
+  "mode": "auto",
+  "history_weeks": 10,
+  "half_life_days": 21,
+  "source": null
+}

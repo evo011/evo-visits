@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EVO Auslastung</title>
+<link rel="icon" href="data:,">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f0efec;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --reference: #898781;
+  --critical: #d03b3b;
+  --good: #0ca30c;
+  --focus: #2a78d6;
+  --heat-0: #cde2fb;
+  --heat-1: #0d366b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --reference: #898781;
+    --focus: #3987e5;
+    --heat-0: #1d2a3a;
+    --heat-1: #b7d3f6;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #262624;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --reference: #898781;
+  --focus: #3987e5;
+  --heat-0: #1d2a3a;
+  --heat-1: #b7d3f6;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page);
+  color: var(--text-primary);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 14px; }
+h1 { font-size: 22px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+h2 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+.sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 12px; }
+.status { color: var(--text-secondary); font-size: 13px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--text-muted); }
+.dot.ok { background: var(--good); }
+.dot.err { background: var(--critical); }
+.spacer { flex: 1; }
+button, select, .btn {
+  font: inherit; font-size: 14px; color: var(--text-primary); background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+button:hover, .btn:hover, select:hover { background: var(--surface-2); }
+button:focus-visible, select:focus-visible, .btn:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button:disabled { opacity: .6; cursor: progress; }
+.banner { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+.banner strong { font-weight: 650; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 16px; }
+.filters label { font-size: 13px; color: var(--text-secondary); display: inline-flex; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-1); }
+.seg button { border: 0; border-radius: 0; padding: 6px 10px; background: transparent; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--surface-2); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tile, .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .label { font-size: 13px; color: var(--text-secondary); }
+.tile .value { font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 2px; }
+.tile.hero .value { font-size: 52px; }
+.tile .value small { font-size: 15px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
+.tile .note { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
+.meter > span { display: block; height: 100%; background: var(--series-1); border-radius: 3px; }
+.grid2 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 900px) { .grid2 { grid-template-columns: 3fr 2fr; } }
+.card { margin-bottom: 12px; }
+.chart { position: relative; width: 100%; height: 280px; transition: opacity .2s; }
+.chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.loading .chart, .loading .heat, .loading .tiles { opacity: .55; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin: 2px 0 6px; }
+.key { display: inline-flex; align-items: center; gap: 6px; }
+.key i { display: inline-block; width: 16px; height: 0; border-top: 2px solid; }
+.key i.dash { border-top-style: dashed; }
+.key i.band { height: 10px; border: 0; border-radius: 2px; opacity: .25; }
+.tick { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.endlabel { fill: var(--text-primary); font-size: 12px; font-weight: 600; }
+.nowlabel { fill: var(--text-muted); font-size: 11px; }
+.tooltip {
+  position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  min-width: 140px; z-index: 5; display: none; white-space: nowrap;
+}
+.tooltip .t { color: var(--text-secondary); margin-bottom: 4px; }
+.tooltip .row { display: flex; align-items: center; gap: 8px; }
+.tooltip .row b { font-size: 13px; color: var(--text-primary); min-width: 34px; }
+.tooltip .row span { color: var(--text-secondary); }
+.tooltip .row i { display: inline-block; width: 12px; border-top: 2px solid; }
+.heat { display: grid; grid-template-columns: 26px repeat(17, 1fr); gap: 2px; font-size: 11px; color: var(--text-muted); }
+.heat .cell { height: 22px; border-radius: 3px; background: var(--surface-2); }
+.heat .cell:hover, .heat .cell:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -1px; }
+.heat .rl { display: flex; align-items: center; }
+.heat .cl { text-align: center; font-variant-numeric: tabular-nums; }
+.scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.scale .bar { flex: 0 0 120px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--heat-0), var(--heat-1)); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); }
+th { font-weight: 600; color: var(--text-secondary); font-size: 13px; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr.sel td { background: var(--surface-2); }
+#overview tbody tr { cursor: pointer; }
+#overview tbody tr:hover td { background: var(--surface-2); }
+.muted { color: var(--text-muted); }
+details { margin-top: 8px; font-size: 13px; }
+details summary { cursor: pointer; color: var(--text-secondary); }
+details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
+.best { list-style: none; padding: 0; margin: 8px 0 0; }
+.best li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--grid); }
+.best li b { font-weight: 600; }
+.best .when { color: var(--text-secondary); }
+.inline-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--text-secondary); }
+.inline-controls select { padding: 3px 6px; font-size: 13px; }
+.empty { text-align: center; padding: 48px 16px; color: var(--text-secondary); }
+.empty code, .banner code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.err { color: var(--critical); }
+.hidden { display: none !important; }
+@media (max-width: 560px) { .hide-sm { display: none; } th, td { padding: 7px 5px; } }
+.tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main id="app">
+  <header>
+    <h1>EVO Auslastung</h1>
+    <div class="status" id="status"><span class="dot"></span><span>lade …</span></div>
+    <div class="spacer"></div>
+    <button id="collectBtn" type="button" title="Sofort einen Abruf starten">Jetzt abrufen</button>
+    <a class="btn" href="/api/export.csv" download>CSV</a>
+  </header>
+
+  <div id="demoBanner" class="banner hidden"><strong>Demo-Daten.</strong> Synthetische Werte zum Ausprobieren der Oberfläche, keine echten EVO-Zahlen. Für echte Daten <code>python3 evo_visits.py serve</code> starten.</div>
+  <div id="errorBanner" class="banner hidden"></div>
+
+  <section id="empty" class="empty hidden">
+    <h2>Noch keine Messwerte</h2>
+    <p>Der Sammler fragt <span id="emptyUrl"></span> alle <span id="emptyInterval"></span> Minuten ab. Sobald der erste Abruf durch ist, erscheinen hier die Clubs.</p>
+    <p class="muted">Klappt die Erkennung nicht, zeigt <code>python3 evo_visits.py probe</code>, was die Seite liefert.</p>
+  </section>
+
+  <section id="content" class="hidden">
+    <div class="filters" role="group" aria-label="Filter">
+      <label>Club <select id="gymSel"></select></label>
+      <label>Verlauf
+        <span class="seg" id="rangeSeg">
+          <button type="button" data-days="1">Heute</button>
+          <button type="button" data-days="7">7 Tage</button>
+          <button type="button" data-days="30">30 Tage</button>
+          <button type="button" data-days="0">Alles</button>
+        </span>
+      </label>
+      <label>Prognose
+        <span class="seg" id="horizonSeg">
+          <button type="button" data-h="24">24 Std</button>
+          <button type="button" data-h="72">3 Tage</button>
+          <button type="button" data-h="168">7 Tage</button>
+        </span>
+      </label>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="card">
+      <h2 id="fcTitle">Heute und Prognose</h2>
+      <p class="sub" id="fcSub"></p>
+      <div class="legend" id="fcLegend"></div>
+      <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
+      <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Ruhigste Zeitfenster</h2>
+        <p class="sub">Laut Prognose, je Tag das Fenster mit den wenigsten Leuten.</p>
+        <div class="inline-controls">
+          zwischen <select id="bestFrom"></select> und <select id="bestTo"></select> Uhr, Dauer
+          <select id="bestDur"><option value="60">60 min</option><option value="90">90 min</option><option value="120">2 Std</option></select>
+        </div>
+        <ul class="best" id="bestList"></ul>
+      </div>
+      <div class="card">
+        <h2>Typische Woche</h2>
+        <p class="sub" id="heatSub">Durchschnitt je Wochentag und Stunde</p>
+        <div class="heat" id="heat" role="grid"></div>
+        <div class="scale"><span id="heatMin">0</span><span class="bar"></span><span id="heatMax"></span></div>
+        <details id="heatTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Verlauf</h2>
+      <p class="sub" id="histSub"></p>
+      <div class="chart" id="histChart" tabindex="0" aria-label="Diagramm: gemessene Besucherzahl im Zeitverlauf"></div>
+      <details id="histTable"><summary>Als Tabelle (Stundenmittel)</summary><div class="tablewrap"></div></details>
+    </div>
+
+    <div class="card">
+      <h2>Alle Clubs</h2>
+      <p class="sub">Letzter Messwert und was um diese Uhrzeit üblich ist. Zeile anklicken zum Wechseln.</p>
+      <div class="tablewrap"><table id="overview"></table></div>
+    </div>
+
+    <details class="card" id="runsBox"><summary>Abruf-Protokoll</summary><div class="tablewrap"><table id="runs"></table></div></details>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const WD = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+let HEAT_HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // Standard 6 bis 22 Uhr, wird an die Daten angepasst
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("evo." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("evo." + k, JSON.stringify(v)); } catch {} },
+};
+const state = {
+  gym: store.get("gym", null), days: store.get("days", 7), horizon: store.get("horizon", 24),
+  bestFrom: store.get("bestFrom", 7), bestTo: store.get("bestTo", 21), bestDur: store.get("bestDur", 60),
+  status: null, gyms: [], data: null,
+};
+
+const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
+const unitLabel = (u) => u === "percent" ? "%" : "Personen";
+const fmtTime = (ms) => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+const fmtDay = (ms) => { const d = new Date(ms); return WD[(d.getDay() + 6) % 7] + " " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }); };
+const fmtDT = (ms) => fmtDay(ms) + " " + fmtTime(ms);
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function el(tag, attrs = {}, text) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svgEl(tag, attrs = {}) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  const j = await r.json();
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Liniendiagramm mit Band, Lücken, Jetzt-Linie, Crosshair und Tooltip
+
+function niceMax(v) {
+  if (!(v > 0)) return 10;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+
+function timeTicks(x0, x1) {
+  const span = x1 - x0, H = 3600e3, D = 24 * H;
+  const ticks = [];
+  if (span <= 40 * H) {
+    const step = span <= 14 * H ? 2 * H : 3 * H;
+    const d = new Date(x0); d.setMinutes(0, 0, 0);
+    let t = d.getTime();
+    while (t < x0) t += H;
+    while (new Date(t).getHours() % (step / H)) t += H;
+    for (; t <= x1; t += step) ticks.push({ t, label: fmtTime(t), major: new Date(t).getHours() === 0 });
+  } else {
+    const every = span <= 9 * D ? 1 : span <= 40 * D ? 7 : 28;
+    const d = new Date(x0); d.setHours(0, 0, 0, 0);
+    let t = d.getTime() + D;
+    if (every === 7) while (new Date(t).getDay() !== 1) t += D;
+    for (; t <= x1; ) {
+      ticks.push({ t, label: fmtDay(t), major: true });
+      const n = new Date(t); n.setDate(n.getDate() + every); n.setHours(0, 0, 0, 0); t = n.getTime();
+    }
+  }
+  return ticks;
+}
+
+function segments(points, maxGap) {
+  // points: [x, y] (y kann null sein). Liefert zusammenhängende Teilstücke.
+  const segs = []; let cur = [];
+  let prevX = null;
+  for (const [x, y] of points) {
+    if (y == null || (prevX != null && x - prevX > maxGap)) { if (cur.length) segs.push(cur); cur = []; }
+    if (y != null) cur.push([x, y]);
+    prevX = x;
+  }
+  if (cur.length) segs.push(cur);
+  return segs;
+}
+
+function lineChart(container, opts) {
+  container.textContent = "";
+  const W = Math.max(container.clientWidth, 280), H = container.clientHeight || 280;
+  const m = { l: 40, r: 44, t: 10, b: 26 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const { x0, x1, series, now, unit } = opts;
+  let ymax = 0;
+  for (const s of series) for (const p of s.points) {
+    if (p[0] < x0 || p[0] > x1) continue;
+    const v = s.band ? (p[3] ?? p[1]) : p[1];
+    if (v != null && v > ymax) ymax = v;
+  }
+  ymax = unit === "percent" ? Math.min(100, niceMax(ymax * 1.08)) : niceMax(ymax * 1.08);
+  const X = (x) => m.l + (x - x0) / (x1 - x0) * iw;
+  const Y = (y) => m.t + ih - (y / ymax) * ih;
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
+
+  // Raster und Y-Achse
+  const nT = 4;
+  for (let i = 0; i <= nT; i++) {
+    const v = ymax / nT * i, y = Y(v);
+    svg.append(svgEl("line", { x1: m.l, x2: m.l + iw, y1: y, y2: y, stroke: i === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1, "shape-rendering": "crispEdges" }));
+    const t = svgEl("text", { x: m.l - 6, y: y + 4, "text-anchor": "end", class: "tick" });
+    t.textContent = nf(v) + (unit === "percent" && i === nT ? " %" : "");
+    svg.append(t);
+  }
+  // X-Ticks, ausgeduennt auf mindestens ~64px Abstand
+  const allTicks = timeTicks(x0, x1);
+  const per = allTicks.length > 1 ? (X(allTicks[1].t) - X(allTicks[0].t)) : iw;
+  const every = Math.max(1, Math.ceil(64 / Math.max(per, 1)));
+  for (const tk of allTicks.filter((_, i) => i % every === 0)) {
+    const x = X(tk.t);
+    if (x < m.l + 10 || x > m.l + iw - 10) continue;
+    if (tk.major) svg.append(svgEl("line", { x1: x, x2: x, y1: m.t, y2: m.t + ih, stroke: "var(--grid)", "stroke-width": 1, "shape-rendering": "crispEdges" }));
+    const t = svgEl("text", { x, y: H - 8, "text-anchor": "middle", class: "tick" });
+    t.textContent = tk.label;
+    svg.append(t);
+  }
+
+  const clip = "c" + Math.random().toString(36).slice(2);
+  const defs = svgEl("defs");
+  const cp = svgEl("clipPath", { id: clip });
+  cp.append(svgEl("rect", { x: m.l, y: m.t - 4, width: iw, height: ih + 8 }));
+  defs.append(cp); svg.append(defs);
+  const g = svgEl("g", { "clip-path": `url(#${clip})` });
+  svg.append(g);
+
+  for (const s of series) {
+    const pts = s.points.filter((p) => p[0] >= x0 - s.gap && p[0] <= x1 + s.gap);
+    if (s.band) {
+      for (const seg of segments(pts.map((p) => [p[0], p[2] == null ? null : p]), s.gap)) {
+        const top = seg.map(([x, p]) => `${X(x).toFixed(1)},${Y(p[3]).toFixed(1)}`);
+        const bot = seg.slice().reverse().map(([x, p]) => `${X(x).toFixed(1)},${Y(p[2]).toFixed(1)}`);
+        g.append(svgEl("path", { d: "M" + top.join("L") + "L" + bot.join("L") + "Z", fill: s.color, opacity: 0.12 }));
+      }
+    }
+    for (const seg of segments(pts.map((p) => [p[0], p[1]]), s.gap)) {
+      const d = "M" + seg.map(([x, y]) => `${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("L");
+      g.append(svgEl("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round", ...(s.dash ? { "stroke-dasharray": s.dash } : {}) }));
+    }
+  }
+
+  // Jetzt-Linie
+  if (now >= x0 && now <= x1) {
+    svg.append(svgEl("line", { x1: X(now), x2: X(now), y1: m.t, y2: m.t + ih, stroke: "var(--axis)", "stroke-width": 1 }));
+    const t = svgEl("text", { x: X(now) + 4, y: m.t + 10, class: "nowlabel" });
+    t.textContent = "jetzt"; svg.append(t);
+  }
+  // Endpunkt-Label der gemessenen Reihe (selektiv: nur der aktuelle Wert)
+  const lead = series.find((s) => s.endLabel);
+  if (lead) {
+    const vis = lead.points.filter((p) => p[1] != null && p[0] >= x0 && p[0] <= x1);
+    const last = vis[vis.length - 1];
+    if (last) {
+      svg.append(svgEl("circle", { cx: X(last[0]), cy: Y(last[1]), r: 4.5, fill: lead.color, stroke: "var(--surface-1)", "stroke-width": 2 }));
+      const t = svgEl("text", { x: X(last[0]) + 8, y: Y(last[1]) - 8, class: "endlabel" });
+      t.textContent = nf(last[1]); svg.append(t);
+    }
+  }
+
+  // Crosshair + Tooltip
+  const cross = svgEl("line", { y1: m.t, y2: m.t + ih, stroke: "var(--text-muted)", "stroke-width": 1, visibility: "hidden" });
+  svg.append(cross);
+  const dots = series.map((s) => { const c = svgEl("circle", { r: 4, fill: s.color, stroke: "var(--surface-1)", "stroke-width": 2, visibility: "hidden" }); svg.append(c); return c; });
+  const hit = svgEl("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" });
+  svg.append(hit);
+  container.append(svg);
+  const tip = el("div", { class: "tooltip" });
+  container.append(tip);
+
+  const allX = [...new Set(series.flatMap((s) => s.points.filter((p) => p[1] != null && p[0] >= x0 && p[0] <= x1).map((p) => p[0])))].sort((a, b) => a - b);
+  let idx = -1;
+  function nearest(arr, x) {
+    let lo = 0, hi = arr.length - 1;
+    if (hi < 0) return -1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (arr[mid][0] < x) lo = mid; else hi = mid; }
+    return Math.abs(arr[lo][0] - x) <= Math.abs(arr[hi][0] - x) ? lo : hi;
+  }
+  function show(xv) {
+    cross.setAttribute("x1", X(xv)); cross.setAttribute("x2", X(xv)); cross.setAttribute("visibility", "visible");
+    tip.textContent = "";
+    tip.append(el("div", { class: "t" }, opts.tipTime ? opts.tipTime(xv) : fmtDT(xv)));
+    let any = false;
+    series.forEach((s, i) => {
+      const pts = s.points.filter((p) => p[1] != null);
+      const j = nearest(pts, xv);
+      const p = j >= 0 ? pts[j] : null;
+      if (!p || Math.abs(p[0] - xv) > s.gap / 2 + 60e3) { dots[i].setAttribute("visibility", "hidden"); return; }
+      any = true;
+      dots[i].setAttribute("cx", X(p[0])); dots[i].setAttribute("cy", Y(p[1])); dots[i].setAttribute("visibility", "visible");
+      const row = el("div", { class: "row" });
+      const key = el("i"); key.style.borderTopColor = s.color; if (s.dash) key.style.borderTopStyle = "dashed";
+      const val = s.band && p[2] != null ? `${nf(p[1])}` : nf(p[1]);
+      row.append(key, el("b", {}, val + (unit === "percent" ? " %" : "")), el("span", {}, s.name + (s.band && p[2] != null ? ` (${nf(p[2])}–${nf(p[3])})` : "")));
+      tip.append(row);
+    });
+    tip.style.display = any ? "block" : "none";
+    const px = X(xv), tw = tip.offsetWidth;
+    tip.style.left = (px + 14 + tw > W ? px - tw - 14 : px + 14) + "px";
+    tip.style.top = m.t + 6 + "px";
+  }
+  function hide() { cross.setAttribute("visibility", "hidden"); dots.forEach((d) => d.setAttribute("visibility", "hidden")); tip.style.display = "none"; }
+  hit.addEventListener("pointermove", (e) => {
+    const r = svg.getBoundingClientRect();
+    const xv = x0 + ((e.clientX - r.left) * (W / r.width) - m.l) / iw * (x1 - x0);
+    const arr = allX.map((x) => [x]);
+    idx = nearest(arr, xv);
+    if (idx >= 0) show(allX[idx]);
+  });
+  hit.addEventListener("pointerleave", hide);
+  container.onkeydown = (e) => {
+    if (!allX.length || !["ArrowLeft", "ArrowRight", "Escape"].includes(e.key)) return;
+    e.preventDefault();
+    if (e.key === "Escape") { hide(); return; }
+    if (idx < 0) idx = nearest(allX.map((x) => [x]), now);
+    idx = Math.max(0, Math.min(allX.length - 1, idx + (e.key === "ArrowRight" ? 1 : -1)));
+    show(allX[idx]);
+  };
+  container.onblur = hide;
+}
+
+function legend(target, items) {
+  target.textContent = "";
+  for (const it of items) {
+    const k = el("span", { class: "key" });
+    const i = el("i", { class: it.cls || "" });
+    if (it.cls === "band") i.style.background = it.color; else i.style.borderTopColor = it.color;
+    k.append(i, document.createTextNode(it.name));
+    target.append(k);
+  }
+}
+
+function table(target, head, rows) {
+  target.textContent = "";
+  const t = el("table"), th = el("thead"), tr = el("tr");
+  head.forEach((h, i) => tr.append(el("th", i ? { class: "num" } : {}, h)));
+  th.append(tr); t.append(th);
+  const tb = el("tbody");
+  for (const r of rows) {
+    const row = el("tr");
+    r.forEach((c, i) => row.append(el("td", i ? { class: "num" } : {}, c)));
+    tb.append(row);
+  }
+  t.append(tb); target.append(t);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Rendering
+
+function renderStatus() {
+  const s = state.status, box = $("#status");
+  box.textContent = "";
+  const dot = el("span", { class: "dot" });
+  const last = s.runs[0];
+  let text;
+  if (s.demo) { text = "Demo-Modus, kein Abruf"; }
+  else if (!last) { text = "warte auf ersten Abruf"; }
+  else {
+    dot.classList.add(last.ok ? "ok" : "err");
+    text = (last.ok ? `letzter Abruf ${fmtTime(last.ts * 1000)}, ${last.n} Clubs` : `Abruf fehlgeschlagen ${fmtTime(last.ts * 1000)}`);
+    if (s.collector && s.collector.next_run) text += ` · nächster ${fmtTime(s.collector.next_run * 1000)}`;
+    if (s.collector && !s.collector.active_now) text += ` · Pause bis ${s.active_hours.split("-")[0]}`;
+  }
+  box.append(dot, el("span", {}, text));
+  $("#demoBanner").classList.toggle("hidden", !s.demo);
+  $("#collectBtn").classList.toggle("hidden", s.demo);
+  const err = $("#errorBanner");
+  if (last && !last.ok) {
+    err.textContent = "";
+    err.append(el("strong", {}, "Letzter Abruf fehlgeschlagen. "), document.createTextNode(last.error || ""));
+    err.classList.remove("hidden");
+  } else err.classList.add("hidden");
+
+  table($("#runs"), ["Zeit", "Clubs", "Ergebnis"], s.runs.map((r) => [fmtDT(r.ts * 1000), String(r.n), r.ok ? (r.source || "ok") : (r.error || "Fehler")]));
+  $("#runs").querySelectorAll("td:last-child").forEach((td) => { td.classList.remove("num"); td.style.textAlign = "left"; td.style.whiteSpace = "normal"; });
+}
+
+function renderOverview() {
+  const t = $("#overview");
+  t.textContent = "";
+  const thead = el("thead"), hr = el("tr");
+  [["Club", ""], ["Jetzt", "num"], ["Üblich", "num"], ["Abweichung", "num hide-sm"], ["Auslastung", "num"], ["Stand", "num hide-sm"]].forEach(([h, c]) => hr.append(el("th", c ? { class: c } : {}, h)));
+  thead.append(hr); t.append(thead);
+  const tb = el("tbody");
+  for (const g of state.gyms) {
+    const tr = el("tr", { tabindex: "0" });
+    if (g.gym === state.gym) tr.classList.add("sel");
+    const pct = g.unit === "percent" ? g.value : (g.capacity ? g.value / g.capacity * 100 : null);
+    const dev = g.typical_now ? (g.value - g.typical_now) / Math.max(g.typical_now, 1) * 100 : null;
+    const cells = [
+      [g.gym, ""],
+      [g.fresh ? nf(g.value) + (g.unit === "percent" ? " %" : "") : "–", "num"],
+      [g.typical_now == null ? "–" : nf(g.typical_now) + (g.unit === "percent" ? " %" : ""), "num"],
+      [dev == null || !g.fresh ? "–" : (dev > 0 ? "+" : dev < 0 ? "−" : "±") + nf(Math.abs(dev)) + " %", "num hide-sm"],
+      [pct == null ? "–" : nf(pct) + " %", "num"],
+      [fmtTime(g.last_ts * 1000) + (g.fresh ? "" : " (alt)"), "num muted hide-sm"],
+    ];
+    for (const [v, c] of cells) tr.append(el("td", c ? { class: c } : {}, v));
+    const pick = () => selectGym(g.gym);
+    tr.addEventListener("click", pick);
+    tr.addEventListener("keydown", (e) => { if (e.key === "Enter") pick(); });
+    tb.append(tr);
+  }
+  t.append(tb);
+}
+
+function tile(label, value, unit, note, opts = {}) {
+  const t = el("div", { class: "tile" + (opts.hero ? " hero" : "") });
+  t.append(el("div", { class: "label" }, label));
+  const v = el("div", { class: "value" }, value);
+  if (unit) v.append(el("small", {}, unit));
+  t.append(v);
+  if (opts.meter != null) {
+    const m = el("div", { class: "meter", role: "meter", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(Math.round(opts.meter)) });
+    const s = el("span"); s.style.width = Math.max(0, Math.min(100, opts.meter)) + "%";
+    m.append(s); t.append(m);
+  }
+  if (note) t.append(el("div", { class: "note" }, note));
+  return t;
+}
+
+function renderTiles() {
+  const d = state.data, box = $("#tiles");
+  box.textContent = "";
+  const u = d.unit, nowMs = d.now * 1000;
+  const fresh = d.now - d.last.ts < 3600;
+  const cur = fresh ? d.last.value : null;
+  const pct = u === "percent" ? cur : (d.capacity && cur != null ? cur / d.capacity * 100 : null);
+  box.append(tile("Jetzt im Club", cur == null ? "–" : nf(cur), cur == null ? "" : (u === "percent" ? "%" : "Personen"),
+    fresh ? `Stand ${fmtTime(d.last.ts * 1000)}` + (d.capacity && u !== "percent" ? ` · max. ${nf(d.capacity)}` : "") : `letzter Wert ${fmtDT(d.last.ts * 1000)}`,
+    { hero: true, meter: pct }));
+
+  const typ = d.typical_today.reduce((best, p) => (p[1] != null && Math.abs(p[0] - nowMs) < Math.abs((best?.[0] ?? Infinity) - nowMs) ? p : best), null);
+  let note = "";
+  if (typ && cur != null && typ[1] > 0) {
+    const dev = (cur - typ[1]) / typ[1] * 100;
+    note = Math.abs(dev) < 5 ? "aktuell ungefähr wie üblich" : `aktuell ${nf(Math.abs(dev))} % ${dev > 0 ? "voller" : "leerer"} als üblich`;
+  }
+  box.append(tile("Üblich um diese Zeit", typ ? nf(typ[1]) : "–", typ ? unitLabel(u) : "", note || (d.n_days < 7 ? "braucht ein paar Tage Daten" : "")));
+
+  const in1h = d.forecast.find((p) => p[0] >= nowMs + 55 * 60e3 && p[1] != null);
+  const hasForecast = d.forecast.some((p) => p[1] != null);
+  box.append(tile("Prognose in 1 Std", in1h ? nf(in1h[1]) : "–", in1h ? unitLabel(u) : "",
+    in1h ? `${fmtTime(in1h[0])} · Spanne ${nf(in1h[2])}–${nf(in1h[3])}` : (hasForecast ? "außerhalb der Öffnungszeit" : "ab dem ersten vollen Messtag")));
+
+  const bt = d.backtest;
+  box.append(tile("Datenbasis", nf(d.n_days), d.n_days === 1 ? "Tag" : "Tage",
+    d.n_days === 0 ? `Aufzeichnung läuft seit ${fmtDT(d.first_ts * 1000)}` : bt ? `Prognose lag zuletzt im Schnitt ±${nf(bt.mae, 1)} daneben (Vorwoche als Prognose: ±${nf(bt.mae_last_week, 1)})` : "Prognosegüte ab ca. 2 Wochen Daten"));
+}
+
+function renderForecast() {
+  const d = state.data, c1 = cssVar("--series-1"), c2 = cssVar("--series-2"), cr = cssVar("--reference");
+  const nowMs = d.now * 1000, H = 3600e3, h = state.horizon;
+  const t0 = new Date(nowMs); t0.setHours(5, 0, 0, 0);
+  const x0 = h === 24 && t0.getTime() < nowMs - 2 * H ? t0.getTime() : nowMs - 6 * H;
+  const x1 = nowMs + h * H;
+  const series = [];
+  if (h === 24) series.push({ name: "Üblich", color: cr, points: d.typical_today, gap: 40 * 60e3, width: 1.5 });
+  series.push({ name: "Prognose", color: c2, points: d.forecast, gap: 40 * 60e3, dash: "5 4", band: true });
+  series.push({ name: "Gemessen", color: c1, points: d.today_actual.length ? d.today_actual : d.history.filter((p) => p[0] >= x0), gap: 40 * 60e3, endLabel: true });
+  $("#fcTitle").textContent = h === 24 ? "Heute und die nächsten 24 Stunden" : `Prognose für die nächsten ${h / 24} Tage`;
+  $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · Band = typische Schwankung`;
+  const leg = [{ name: "Gemessen", color: c1 }, { name: "Prognose", color: c2, cls: "dash" }, { name: "Schwankung", color: c2, cls: "band" }];
+  if (h === 24) leg.push({ name: "Üblich an diesem Wochentag", color: cr });
+  legend($("#fcLegend"), leg);
+  lineChart($("#fcChart"), { x0, x1, series, now: nowMs, unit: d.unit });
+
+  const rows = d.forecast.filter((p) => p[0] > nowMs && p[0] <= x1 && p[1] != null && new Date(p[0]).getMinutes() === 0)
+    .map((p) => [fmtDT(p[0]), nf(p[1]), nf(p[2]) + "–" + nf(p[3])]);
+  table($("#fcTable .tablewrap"), ["Zeit", "Prognose", "Spanne"], rows);
+}
+
+function hourlyMeans(points) {
+  const acc = new Map();
+  for (const [t, v] of points) { const k = Math.floor(t / 3600e3) * 3600e3; const a = acc.get(k) || [0, 0]; a[0] += v; a[1]++; acc.set(k, a); }
+  return [...acc.entries()].map(([k, [s, n]]) => [k, s / n]);
+}
+
+function renderHistory() {
+  const d = state.data, c1 = cssVar("--series-1");
+  const nowMs = d.now * 1000;
+  let pts = d.history;
+  if (pts.length > 2500) pts = hourlyMeans(pts).map(([t, v]) => [t + 1800e3, v]);
+  const x0 = state.days > 0 ? nowMs - state.days * 86400e3 : (pts[0]?.[0] ?? nowMs - 86400e3);
+  const gap = pts.length && d.history.length > 2500 ? 3 * 3600e3 : 40 * 60e3;
+  lineChart($("#histChart"), { x0, x1: nowMs, series: [{ name: "Gemessen", color: c1, points: pts, gap, endLabel: true }], now: nowMs, unit: d.unit });
+  const label = { 1: "heute", 7: "letzte 7 Tage", 30: "letzte 30 Tage", 0: "seit Beginn der Aufzeichnung" }[state.days];
+  $("#histSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · ${label} · ${nf(d.history.length)} Messpunkte`;
+  const rows = hourlyMeans(d.history).reverse().slice(0, 24 * 31).map(([t, v]) => [fmtDT(t), nf(v, 1)]);
+  table($("#histTable .tablewrap"), ["Stunde", "Mittel"], rows);
+}
+
+function mix(a, b, t) {
+  const pa = a.match(/\w\w/g).map((x) => parseInt(x, 16)), pb = b.match(/\w\w/g).map((x) => parseInt(x, 16));
+  return "rgb(" + pa.map((v, i) => Math.round(v + (pb[i] - v) * t)).join(",") + ")";
+}
+
+function renderHeat() {
+  const d = state.data, box = $("#heat");
+  box.textContent = "";
+  const h0 = cssVar("--heat-0").replace("#", ""), h1 = cssVar("--heat-1").replace("#", "");
+  const withData = [...Array(24).keys()].filter((h) => d.heatmap.some((r) => r[h] != null && r[h] > 0));
+  const hFrom = Math.min(6, withData[0] ?? 6), hTo = Math.max(22, withData[withData.length - 1] ?? 22);
+  HEAT_HOURS = Array.from({ length: hTo - hFrom + 1 }, (_, i) => i + hFrom);
+  box.style.gridTemplateColumns = `26px repeat(${HEAT_HOURS.length}, 1fr)`;
+  let max = 0;
+  for (const row of d.heatmap) for (const h of HEAT_HOURS) if (row[h] != null) max = Math.max(max, row[h]);
+  max = max || 1;
+  box.append(el("span"));
+  HEAT_HOURS.forEach((h) => box.append(el("span", { class: "cl" }, h % 3 === 0 ? String(h) : "")));
+  const tipHost = box.parentElement;
+  let tip = tipHost.querySelector(".tooltip");
+  if (!tip) { tip = el("div", { class: "tooltip" }); tipHost.style.position = "relative"; tipHost.append(tip); }
+  d.heatmap.forEach((row, wd) => {
+    box.append(el("span", { class: "rl" }, WD[wd]));
+    HEAT_HOURS.forEach((h) => {
+      const v = row[h];
+      const c = el("span", { class: "cell", tabindex: "-1", role: "gridcell", "aria-label": `${WD[wd]} ${h} Uhr: ${v == null ? "keine Daten" : nf(v)}` });
+      if (v != null) c.style.background = mix(h0, h1, Math.pow(v / max, 0.85));
+      const showTip = () => {
+        tip.textContent = "";
+        tip.append(el("div", { class: "t" }, `${WD[wd]}, ${h}–${h + 1} Uhr`));
+        const r = el("div", { class: "row" }); r.append(el("b", {}, v == null ? "–" : nf(v) + (d.unit === "percent" ? " %" : "")), el("span", {}, v == null ? "keine Daten" : "im Schnitt"));
+        tip.append(r);
+        tip.style.display = "block";
+        const hr = tipHost.getBoundingClientRect(), cr = c.getBoundingClientRect();
+        let left = cr.left - hr.left + cr.width / 2 - tip.offsetWidth / 2;
+        left = Math.max(4, Math.min(hr.width - tip.offsetWidth - 4, left));
+        tip.style.left = left + "px"; tip.style.top = (cr.top - hr.top - tip.offsetHeight - 6) + "px";
+      };
+      c.addEventListener("pointerenter", showTip);
+      c.addEventListener("focus", showTip);
+      c.addEventListener("pointerleave", () => (tip.style.display = "none"));
+      c.addEventListener("blur", () => (tip.style.display = "none"));
+      box.append(c);
+    });
+  });
+  $("#heatMax").textContent = nf(max) + (d.unit === "percent" ? " %" : " Personen");
+  $("#heatSub").textContent = `Durchschnitt je Wochentag und Stunde, letzte ${d.n_days} Tage`;
+  table($("#heatTable .tablewrap"), ["Stunde", ...WD], HEAT_HOURS.map((h) => [`${h}–${h + 1}`, ...d.heatmap.map((r) => r[h] == null ? "–" : nf(r[h]))]));
+}
+
+function renderBest() {
+  const d = state.data, list = $("#bestList");
+  list.textContent = "";
+  const nowMs = d.now * 1000;
+  const pts = d.forecast.filter((p) => p[1] != null && p[0] > nowMs);
+  if (pts.length < 2) { list.append(el("li", { class: "muted" }, "Noch zu wenig Daten für eine Prognose.")); return; }
+  const step = pts[1][0] - pts[0][0];
+  const n = Math.max(1, Math.round(state.bestDur * 60e3 / step));
+  const byDay = new Map();
+  for (const p of pts) { const k = new Date(p[0]).toDateString(); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(p); }
+  for (const [, dayPts] of [...byDay.entries()].slice(0, 7)) {
+    let best = null;
+    for (let i = 0; i + n <= dayPts.length; i++) {
+      const w = dayPts.slice(i, i + n);
+      const s = new Date(w[0][0]), endMs = w[n - 1][0] + step;
+      const e = new Date(endMs);
+      if (endMs - w[0][0] > n * step + 1) continue;
+      const startH = s.getHours() + s.getMinutes() / 60;
+      const endH = (e.getDate() !== s.getDate() ? 24 : 0) + e.getHours() + e.getMinutes() / 60;
+      if (startH < state.bestFrom || endH > state.bestTo) continue;
+      const avg = w.reduce((a, p) => a + p[1], 0) / n;
+      if (!best || avg < best.avg) best = { start: w[0][0], end: endMs, avg };
+    }
+    const li = el("li");
+    if (best) {
+      li.append(el("span", { class: "when" }, `${fmtDay(best.start)}, ${fmtTime(best.start)}–${fmtTime(best.end)}`), el("b", {}, `~${nf(best.avg)} ${d.unit === "percent" ? "%" : "Pers."}`));
+    } else {
+      li.append(el("span", { class: "when" }, fmtDay(dayPts[0][0])), el("span", { class: "muted" }, "kein passendes Fenster"));
+    }
+    list.append(li);
+  }
+}
+
+function renderAll() {
+  if (!state.data) return;
+  renderTiles(); renderForecast(); renderHistory(); renderHeat(); renderBest(); renderOverview();
+}
+
+// ---------------------------------------------------------------------------------------------
+// Laden und Steuerung
+
+async function loadGym() {
+  if (!state.gym) return;
+  document.body.classList.add("loading");
+  try {
+    state.data = await api(`/api/gym?gym=${encodeURIComponent(state.gym)}&days=${state.days}`);
+    renderAll();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    document.body.classList.remove("loading");
+  }
+}
+
+async function refresh(full = true) {
+  try {
+    const [status, gyms] = await Promise.all([api("/api/status"), api("/api/gyms")]);
+    state.status = status; state.gyms = gyms;
+  } catch (e) { console.error(e); return; }
+  renderStatus();
+  const has = state.gyms.length > 0;
+  $("#empty").classList.toggle("hidden", has);
+  $("#content").classList.toggle("hidden", !has);
+  $("#emptyUrl").textContent = state.status.url;
+  $("#emptyInterval").textContent = state.status.interval_minutes;
+  if (!has) return;
+  const sel = $("#gymSel");
+  const names = state.gyms.map((g) => g.gym);
+  if (sel.options.length !== names.length || [...sel.options].some((o, i) => o.value !== names[i])) {
+    sel.textContent = "";
+    for (const n of names) sel.append(el("option", { value: n }, n));
+  }
+  if (!names.includes(state.gym)) state.gym = names[0];
+  sel.value = state.gym;
+  if (full) await loadGym(); else renderOverview();
+}
+
+function selectGym(name) {
+  state.gym = name; store.set("gym", name); $("#gymSel").value = name;
+  loadGym();
+}
+
+function setPressed(seg, attr, value) {
+  seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset[attr]) === value)));
+}
+
+function initControls() {
+  $("#gymSel").addEventListener("change", (e) => selectGym(e.target.value));
+  const rs = $("#rangeSeg"), hs = $("#horizonSeg");
+  setPressed(rs, "days", state.days); setPressed(hs, "h", state.horizon);
+  rs.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.days = Number(b.dataset.days); store.set("days", state.days); setPressed(rs, "days", state.days); loadGym();
+  });
+  hs.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.horizon = Number(b.dataset.h); store.set("horizon", state.horizon); setPressed(hs, "h", state.horizon);
+    if (state.data) { renderForecast(); }
+  });
+  const from = $("#bestFrom"), to = $("#bestTo"), dur = $("#bestDur");
+  for (let h = 6; h <= 23; h++) { from.append(el("option", { value: h }, String(h))); to.append(el("option", { value: h }, String(h))); }
+  from.value = state.bestFrom; to.value = state.bestTo; dur.value = state.bestDur;
+  const upd = () => {
+    state.bestFrom = Number(from.value); state.bestTo = Number(to.value); state.bestDur = Number(dur.value);
+    store.set("bestFrom", state.bestFrom); store.set("bestTo", state.bestTo); store.set("bestDur", state.bestDur);
+    if (state.data) renderBest();
+  };
+  [from, to, dur].forEach((s) => s.addEventListener("change", upd));
+  $("#collectBtn").addEventListener("click", async (e) => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = "Rufe ab …";
+    try { await api("/api/collect", { method: "POST" }); } catch (err) { console.error(err); }
+    b.disabled = false; b.textContent = "Jetzt abrufen";
+    refresh();
+  });
+  let rt;
+  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderHistory(); } }, 120); }).observe($("#app"));
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+}
+
+initControls();
+refresh();
+setInterval(() => refresh(true), 60e3);
+</script>
+</body>
+</html>
