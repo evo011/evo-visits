@@ -158,6 +158,24 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
 .empty code, .banner code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 .err { color: var(--critical); }
 .hidden { display: none !important; }
+.tooltip.wide { white-space: normal; max-width: 240px; }
+.tooltip .extra { font-size: 11px; color: var(--text-secondary); margin-top: 2px; white-space: pre-line; }
+.dayswrap { margin-top: 10px; }
+.days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(84px, 1fr); gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.day { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.day .dh { font-size: 13px; font-weight: 600; }
+.day .wx { white-space: nowrap; }
+.day .pr { color: var(--text-secondary); }
+.day .pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.day .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; }
+.day .pill.hl { border: 1px solid var(--series-2); }
+.day .de { color: var(--text-secondary); margin-top: auto; }
+.wxnote { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+#effectsCard h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 14px 0 4px; }
+#effectsCard .fx-line { font-size: 13px; margin: 0 0 4px; }
+.mini { font-size: 12px; color: var(--text-muted); }
+.spill { display: inline-block; background: var(--surface-2); border-radius: 999px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
+.src { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); margin: 3px 0; }
 @media (max-width: 560px) { .hide-sm { display: none; } th, td { padding: 7px 5px; } }
 .tablewrap { overflow-x: auto; }
 </style>
@@ -208,7 +226,18 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
       <p class="sub" id="fcSub"></p>
       <div class="legend" id="fcLegend"></div>
       <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
+      <div class="dayswrap"><div class="days" id="fcDays"></div><div class="wxnote" id="fcWxNote" hidden>Wetter noch nicht geladen</div></div>
       <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+    </div>
+
+    <div class="card" id="effectsCard">
+      <h2>Was die Auslastung beeinflusst</h2>
+      <p class="sub" id="fxSub"></p>
+      <div class="tablewrap"><table id="fxTable"></table></div>
+      <h3>Prüfung (Backtest)</h3>
+      <div id="fxBacktest"></div>
+      <h3>Datenquellen</h3>
+      <div id="fxSources"></div>
     </div>
 
     <div class="grid2">
@@ -267,6 +296,27 @@ const unitLabel = (u) => u === "percent" ? "%" : "Personen";
 const fmtTime = (ms) => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 const fmtDay = (ms) => { const d = new Date(ms); return WD[(d.getDay() + 6) % 7] + " " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }); };
 const fmtDT = (ms) => fmtDay(ms) + " " + fmtTime(ms);
+function wxIcon(code) {
+  if (code === 0) return "☀️";
+  if (code === 1 || code === 2) return "🌤️";
+  if (code === 3) return "☁️";
+  if (code === 45 || code === 48) return "🌫️";
+  if (code >= 51 && code <= 57) return "🌦️";
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "🌨️";
+  if (code >= 95 && code <= 99) return "⛈️";
+  return "☁️";
+}
+function wxText(code) {
+  if (code === 0) return "sonnig";
+  if (code === 1 || code === 2) return "heiter";
+  if (code === 45 || code === 48) return "Nebel";
+  if (code >= 51 && code <= 57) return "Niesel";
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "Regen";
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "Schnee";
+  if (code >= 95 && code <= 99) return "Gewitter";
+  return "bewölkt";
+}
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function el(tag, attrs = {}, text) {
   const e = document.createElement(tag);
@@ -345,7 +395,7 @@ function lineChart(container, opts) {
     const v = s.band ? (p[3] ?? p[1]) : p[1];
     if (v != null && v > ymax) ymax = v;
   }
-  ymax = unit === "percent" ? Math.min(100, niceMax(ymax * 1.08)) : niceMax(ymax * 1.08);
+  ymax = niceMax(ymax * 1.08);
   const X = (x) => m.l + (x - x0) / (x1 - x0) * iw;
   const Y = (y) => m.t + ih - (y / ymax) * ih;
   const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" });
@@ -420,7 +470,7 @@ function lineChart(container, opts) {
   const hit = svgEl("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" });
   svg.append(hit);
   container.append(svg);
-  const tip = el("div", { class: "tooltip" });
+  const tip = el("div", { class: "tooltip" + (series.some((s) => s.tipExtra) ? " wide" : "") });
   container.append(tip);
 
   const allX = [...new Set(series.flatMap((s) => s.points.filter((p) => p[1] != null && p[0] >= x0 && p[0] <= x1).map((p) => p[0])))].sort((a, b) => a - b);
@@ -448,6 +498,10 @@ function lineChart(container, opts) {
       const val = s.band && p[2] != null ? `${nf(p[1])}` : nf(p[1]);
       row.append(key, el("b", {}, val + (unit === "percent" ? " %" : "")), el("span", {}, s.name + (s.band && p[2] != null ? ` (${nf(p[2])}–${nf(p[3])})` : "")));
       tip.append(row);
+      if (s.tipExtra) {
+        const extras = s.tipExtra(p);
+        if (extras.length) tip.append(el("div", { class: "extra" }, extras.join("\n")));
+      }
     });
     tip.style.display = any ? "block" : "none";
     const px = X(xv), tw = tip.offsetWidth;
@@ -600,7 +654,7 @@ function renderTiles() {
 
   const bt = d.backtest;
   box.append(tile("Datenbasis", nf(d.n_days), d.n_days === 1 ? "Tag" : "Tage",
-    d.n_days === 0 ? `Aufzeichnung läuft seit ${fmtDT(d.first_ts * 1000)}` : bt ? `Prognose lag zuletzt im Schnitt ±${nf(bt.mae, 1)} daneben (Vorwoche als Prognose: ±${nf(bt.mae_last_week, 1)})` : "Prognosegüte ab ca. 2 Wochen Daten"));
+    d.n_days === 0 ? `Aufzeichnung läuft seit ${fmtDT(d.first_ts * 1000)}` : bt ? `Prognose lag zuletzt im Schnitt ±${nf(bt.mae_model, 1)} daneben (Vorwoche als Prognose: ±${nf(bt.mae_last_week, 1)})` : "Prognosegüte ab ca. 2 Wochen Daten"));
 }
 
 function renderForecast() {
@@ -611,11 +665,25 @@ function renderForecast() {
   const x1 = nowMs + h * H;
   const series = [];
   if (h === 24) series.push({ name: "Üblich", color: cr, points: d.typical_today, gap: 40 * 60e3, width: 1.5 });
-  series.push({ name: "Prognose", color: c2, points: d.forecast, gap: 40 * 60e3, dash: "5 4", band: true });
+  series.push({
+    name: "Prognose", color: c2, points: d.forecast, gap: 40 * 60e3, dash: "5 4", band: true,
+    tipExtra(p) {
+      const out = [];
+      const w = p[5];
+      if (w) {
+        const parts = [`${wxIcon(w.code)} ${nf(w.temp)} °C`];
+        if (w.precip > 0) parts.push(`${nf(w.precip, 1)} mm`);
+        if (w.sun_min > 0) parts.push(`${nf(w.sun_min)} min Sonne`);
+        out.push(parts.join(" · "));
+      }
+      if (p[4] != null && Math.abs(p[4]) >= 1) out.push(`Wetter/Kalender: ${(p[4] > 0 ? "+" : "−") + nf(Math.abs(p[4]))} %`);
+      return out;
+    },
+  });
   series.push({ name: "Gemessen", color: c1, points: d.today_actual.length ? d.today_actual : d.history.filter((p) => p[0] >= x0), gap: 40 * 60e3, endLabel: true });
   $("#fcTitle").textContent = h === 24 ? "Heute und die nächsten 24 Stunden" : `Prognose für die nächsten ${h / 24} Tage`;
-  $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · Band = typische Schwankung`;
-  const leg = [{ name: "Gemessen", color: c1 }, { name: "Prognose", color: c2, cls: "dash" }, { name: "Schwankung", color: c2, cls: "band" }];
+  $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · Band = 80 % der erwarteten Werte`;
+  const leg = [{ name: "Gemessen", color: c1 }, { name: "Prognose", color: c2, cls: "dash" }, { name: "80-%-Band", color: c2, cls: "band" }];
   if (h === 24) leg.push({ name: "Üblich an diesem Wochentag", color: cr });
   legend($("#fcLegend"), leg);
   lineChart($("#fcChart"), { x0, x1, series, now: nowMs, unit: d.unit });
@@ -623,6 +691,140 @@ function renderForecast() {
   const rows = d.forecast.filter((p) => p[0] > nowMs && p[0] <= x1 && p[1] != null && new Date(p[0]).getMinutes() === 0)
     .map((p) => [fmtDT(p[0]), nf(p[1]), nf(p[2]) + "–" + nf(p[3])]);
   table($("#fcTable .tablewrap"), ["Zeit", "Prognose", "Spanne"], rows);
+}
+
+function renderDays() {
+  const d = state.data, box = $("#fcDays");
+  box.textContent = "";
+  const now = new Date(d.now * 1000);
+  const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+  let anyWeather = false;
+  for (const day of d.days || []) {
+    if (day.weather) anyWeather = true;
+    const c = el("div", { class: "day" });
+    const isToday = day.date === todayStr;
+    const dd = day.date.slice(8, 10) + "." + day.date.slice(5, 7) + ".";
+    c.append(el("div", { class: "dh" }, isToday ? "Heute" : WD[day.weekday] + " " + dd));
+    if (day.weather) {
+      const w = day.weather;
+      const wx = el("div", { class: "wx", title: wxText(w.code), "aria-label": wxText(w.code) });
+      wx.append(document.createTextNode(`${wxIcon(w.code)} ${Math.round(w.tmax)}° / ${Math.round(w.tmin)}°`));
+      c.append(wx);
+      if (w.precip >= 0.5) c.append(el("div", { class: "pr" }, `${nf(w.precip, 1)} mm`));
+    } else {
+      c.append(el("div", { class: "wx muted" }, "–"));
+    }
+    const pills = el("div", { class: "pills" });
+    if (day.holiday) pills.append(el("span", { class: "pill hl" }, day.holiday));
+    if (day.school) pills.append(el("span", { class: "pill", title: day.school }, "Ferien"));
+    if (day.bridge) pills.append(el("span", { class: "pill" }, "Brückentag"));
+    c.append(pills);
+    const e = day.effect_pct;
+    let etxt = "–";
+    if (e != null) { const r = Math.round(e); etxt = r === 0 ? "±0 %" : (r > 0 ? "+" : "−") + Math.abs(r) + " %"; }
+    const de = el("div", { class: "de" }, "Effekt ");
+    de.append(el("span", {}, etxt));
+    c.append(de);
+    box.append(c);
+  }
+  $("#fcWxNote").hidden = anyWeather || !(d.days || []).length;
+}
+
+const fxPct = (v) => v == null ? "–" : v >= 0.5 ? `+${nf(v)} %` : v <= -0.5 ? `−${nf(Math.abs(v))} %` : "±0 %";
+
+function renderEffects() {
+  const d = state.data, e = d.effects || {};
+  const city = (d.location && d.location.city) || state.gym;
+  $("#fxSub").textContent = `Geschätzt aus den eigenen Messwerten in ${city}, multiplikativ auf das typische Wochenprofil. Ein Effekt zählt erst ab genug Tagen mit diesem Wetter oder Kalendertag.`;
+  const t = $("#fxTable");
+  t.textContent = "";
+  const thead = el("thead"), hr = el("tr");
+  [["Einfluss", ""], ["Wirkung", "num"], ["Spanne (80 %)", "num hide-sm"], ["Datenbasis", "num hide-sm"], ["Status", ""]].forEach(([h, c]) => hr.append(el("th", c ? { class: c } : {}, h)));
+  thead.append(hr); t.append(thead);
+  const tb = el("tbody");
+  const spanOf = (f) => {
+    if (!f || f.status !== "aktiv") return "–";
+    const s = (x) => x > 0 ? "+" : x < 0 ? "−" : "±";
+    return `${s(f.lo_pct)}${nf(Math.abs(f.lo_pct))} bis ${s(f.hi_pct)}${nf(Math.abs(f.hi_pct))} %`;
+  };
+  const rows = [
+    ["Regen", "je mm pro Stunde", "rain"],
+    ["Wärme", "je 10 °C über 18 °C", "warm"],
+    ["Kälte", "je 10 °C unter 8 °C", "cold"],
+    ["Sonne", "volle Sonnenstunde", "sun"],
+    ["Schulferien", "Ferientag", "school"],
+    ["Brückentag", "Brückentag", "bridge"],
+  ];
+  for (const [name, note, key] of rows) {
+    const f = e[key];
+    const tr = el("tr");
+    const td0 = el("td");
+    td0.append(el("b", {}, name), el("div", { class: "mini" }, note));
+    tr.append(td0);
+    tr.append(el("td", { class: "num" }, f && f.status === "aktiv" ? fxPct(f.effect_pct) : "–"));
+    tr.append(el("td", { class: "num hide-sm" }, spanOf(f)));
+    tr.append(el("td", { class: "num hide-sm" }, f ? `${f.active_days} Tage (ab ${f.min_days})` : "–"));
+    const tds = el("td");
+    tds.append(el("span", { class: "spill" }, f ? f.status : "–"));
+    tr.append(tds);
+    tb.append(tr);
+  }
+  const trh = el("tr");
+  const td0 = el("td");
+  td0.append(el("b", {}, "Feiertage"), el("div", { class: "mini" }, "nutzen das Sonntagsprofil"));
+  trh.append(td0);
+  trh.append(el("td", { class: "num" }, "Sonntagsprofil"));
+  trh.append(el("td", { class: "num hide-sm" }, "–"));
+  trh.append(el("td", { class: "num hide-sm" }, `${e.n_holiday_days ?? 0} Feiertage in den Daten`));
+  const tds = el("td");
+  tds.append(el("span", { class: "spill" }, "aktiv"));
+  trh.append(tds);
+  tb.append(trh);
+  t.append(tb);
+
+  const btBox = $("#fxBacktest");
+  btBox.textContent = "";
+  const bt = d.backtest;
+  if (bt) {
+    const p = el("p", { class: "fx-line" });
+    p.append(document.createTextNode(`Letzte ${bt.days} Tage nachgerechnet: `));
+    const items = [["Modell", bt.mae_model], ["nur Wochenprofil", bt.mae_profile], ["„wie Vorwoche“", bt.mae_last_week]];
+    const minV = Math.min(...items.map(([, v]) => v));
+    items.forEach(([label, v], i) => {
+      if (i) p.append(document.createTextNode(", "));
+      p.append(document.createTextNode(label + " "));
+      p.append(v === minV ? el("b", {}, `±${nf(v, 1)}`) : document.createTextNode(`±${nf(v, 1)}`));
+    });
+    p.append(document.createTextNode(` ${unitLabel(d.unit)} mittlere Abweichung. Das Band traf ${nf(bt.coverage_pct)} % der Messwerte (Ziel 80 %).`));
+    btBox.append(p);
+    const verdict = bt.verdict === "hilft" ? "Die Effekte verbessern die Prognose und bleiben an."
+      : bt.verdict === "verworfen" ? "Die Effekte haben die Prognose nicht verbessert und sind ausgeschaltet." : null;
+    if (verdict) btBox.append(el("p", { class: "fx-line" }, verdict));
+    if (bt.weather_note) btBox.append(el("p", { class: "mini" }, bt.weather_note));
+  } else {
+    btBox.append(el("p", { class: "fx-line" }, "Noch nicht prüfbar: Der Backtest braucht mindestens 8 Tage Messwerte. Bis dahin gelten die Effekte als ungeprüft."));
+  }
+
+  const ms = (v) => v == null ? null : v < 1e12 ? v * 1000 : v;
+  const src = $("#fxSources");
+  src.textContent = "";
+  const line = (ok, text) => {
+    const r = el("div", { class: "src" });
+    r.append(el("span", { class: "dot" + (ok === true ? " ok" : ok === false ? " err" : "") }), document.createTextNode(text));
+    src.append(r);
+  };
+  const w = d.sources && d.sources.weather;
+  if (w) {
+    const stand = ms(w.fetched_at) != null ? `, Stand ${fmtDT(ms(w.fetched_at))}` : "";
+    line(w.ok, w.ok === false ? `Wetter: ${w.error || "nicht verfügbar"}` : `Wetter: ${w.label} für ${city}${stand}`);
+  }
+  const sc = d.sources && d.sources.school;
+  if (sc) {
+    const stand = ms(sc.fetched_at) != null ? `, Stand ${fmtDT(ms(sc.fetched_at))}` : "";
+    line(sc.ok, sc.ok === false ? `Ferien: ${sc.error || "nicht verfügbar"}` : `Ferien: ${sc.label} für ${(d.location && d.location.state) || ""}${stand}`);
+  }
+  const run = state.status && state.status.runs && state.status.runs[0];
+  line(run ? run.ok : null, `Besucherzahlen: EVO, letzter Abruf ${run ? fmtDT(run.ts * 1000) : "–"}`);
 }
 
 function hourlyMeans(points) {
@@ -730,7 +932,7 @@ function renderBest() {
 
 function renderAll() {
   if (!state.data) return;
-  renderTiles(); renderForecast(); renderHistory(); renderHeat(); renderBest(); renderOverview();
+  renderTiles(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBest(); renderOverview();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -810,7 +1012,7 @@ function initControls() {
     refresh();
   });
   let rt;
-  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderHistory(); } }, 120); }).observe($("#app"));
+  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderDays(); renderHistory(); } }, 120); }).observe($("#app"));
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 }
 
