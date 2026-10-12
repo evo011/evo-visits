@@ -75,9 +75,11 @@ def main(argv: list[str]) -> int:
         from evo.demo import generate
         from evo.server import serve
         cfg.db_path = str(DATA_DIR / "demo.db")
+        # Demo-DB immer neu anlegen, damit die Demo zur aktuellen Version passt
+        for suffix in ("", "-wal", "-shm"):
+            Path(cfg.db_path + suffix).unlink(missing_ok=True)
         store = Store(cfg.db_path)
-        if not store.gyms():
-            print(f"Erzeuge Demo-Daten ... {generate(store, cfg.timezone)} Messpunkte")
+        print(f"Erzeuge Demo-Daten ... {generate(store, cfg.timezone)} Messpunkte")
         serve(cfg, store, demo=True)
     elif args.command == "context":
         from evo.context import Context
