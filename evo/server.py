@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
 import threading
 import time
 import traceback
@@ -320,11 +321,27 @@ class App:
 
 
 def make_handler(app: App):
+    FONT_NAME_RE = re.compile(r"^[A-Za-z0-9._-]+$")
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "evo-visits"
 
         def log_message(self, fmt, *args):  # ruhig bleiben, nur Fehler loggen
             pass
+
+        def _send_font(self, name: str) -> None:
+            # Nur schlichte Dateinamen aus web/fonts, kein Pfad-Traversal
+            if not FONT_NAME_RE.fullmatch(name) or ".." in name:
+                self._send(404, b"not found", "text/plain")
+                return
+            path = WEB_DIR / "fonts" / name
+            if not path.is_file():
+                self._send(404, b"not found", "text/plain")
+                return
+            ctype = ("font/woff2" if name.endswith(".woff2")
+                     else "text/plain; charset=utf-8")
+            extra = {"Cache-Control": "public, max-age=604800"} if name.endswith(".woff2") else None
+            self._send(200, path.read_bytes(), ctype, extra)
 
         def _send(self, status: int, body: bytes, ctype: str, extra: Optional[dict] = None) -> None:
             self.send_response(status)
@@ -346,6 +363,8 @@ def make_handler(app: App):
             try:
                 if method == "GET" and url.path in ("/", "/index.html"):
                     self._send(200, (WEB_DIR / "index.html").read_bytes(), "text/html; charset=utf-8")
+                elif method == "GET" and url.path.startswith("/fonts/"):
+                    self._send_font(url.path[len("/fonts/"):])
                 elif method == "GET" and url.path == "/api/status":
                     self._json(app.api_status(q))
                 elif method == "GET" and url.path == "/api/gyms":

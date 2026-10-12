@@ -2,15 +2,38 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>EVO Auslastung</title>
 <meta name="theme-color" content="#0b0d0e" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#eceee9" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0d0e'/%3E%3Crect x='10' y='36' width='8' height='18' fill='%2319c3b9'/%3E%3Crect x='22' y='24' width='8' height='30' fill='%2319c3b9'/%3E%3Crect x='34' y='10' width='8' height='44' fill='%23c8ff3d'/%3E%3Crect x='46' y='28' width='8' height='26' fill='%2319c3b9'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Geist+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap">
+<link rel="preload" href="fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+@font-face {
+  font-family: "Big Shoulders Display";
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url("fonts/big-shoulders-display.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url("fonts/geist-mono.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url("fonts/instrument-sans.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 :root {
   color-scheme: dark;
   --page: #0b0d0e;
@@ -90,6 +113,10 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
+html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; }
+@media (pointer: coarse) { input, select, textarea { font-size: 16px; } }
+button, a, [role="button"], .chip { touch-action: manipulation; }
+button, .chip, .seg button { user-select: none; -webkit-user-select: none; }
 body {
   background-color: var(--page);
   background-image: radial-gradient(60vw 40vh at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
@@ -108,8 +135,8 @@ body::after {
   content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: .04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; }
-header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 14px; }
+main { max-width: 1120px; margin: 0 auto; padding: 20px 16px calc(48px + env(safe-area-inset-bottom, 0px)); }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 14px; padding-top: env(safe-area-inset-top, 0px); }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
 .brand svg { flex: 0 0 auto; }
 .wordmark { font-family: var(--font-display); text-transform: uppercase; line-height: 1; }
@@ -139,20 +166,19 @@ h2 { font-family: var(--font-display); font-size: 22px; font-weight: 800; text-t
   header .status { order: 5; flex: 1 0 100%; flex-wrap: nowrap; white-space: nowrap; }
   header .status .dot { flex: 0 0 auto; }
   header .status span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-  #quickbar { position: sticky; top: 0; z-index: 10; background: var(--page); border-bottom: 1px solid var(--border); padding: 8px 16px; margin: 0 -16px 12px; flex-wrap: nowrap; }
+  #quickbar { position: sticky; top: 0; z-index: 10; background: var(--page); border-bottom: 1px solid var(--border); padding: 8px 16px; padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); margin: 0 -16px 12px; flex-wrap: nowrap; }
   #quickbar .gym-pick { flex: 1; min-width: 0; margin-left: auto; }
   #quickbar .gym-pick .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
   #gymSel { width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 @media (max-width: 560px) {
-  #quickbar { padding: 8px 12px; margin: 0 -12px 12px; }
+  #quickbar { padding: 8px 12px; padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); margin: 0 -12px 12px; }
 }
 button, select, .btn {
   font: inherit; font-size: 14px; color: var(--text-primary); background: var(--surface-1);
   border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; min-height: 40px; cursor: pointer;
   text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
 }
-button:hover, .btn:hover, select:hover { background: var(--surface-2); }
 button:focus-visible, select:focus-visible, .btn:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 button:disabled { opacity: .6; cursor: progress; }
 .banner { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
@@ -234,7 +260,7 @@ button:disabled { opacity: .6; cursor: progress; }
 .tooltip .row i { display: inline-block; width: 12px; border-top: 2px solid; }
 .heat { display: grid; grid-template-columns: 26px repeat(17, 1fr); gap: 2px; font-size: 11px; color: var(--text-muted); }
 .heat .cell { height: 22px; border-radius: 2px; background: var(--surface-2); }
-.heat .cell:hover, .heat .cell:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -1px; }
+.heat .cell:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -1px; }
 .heat .rl { display: flex; align-items: center; }
 .heat .cl { text-align: center; font-variant-numeric: tabular-nums; }
 .scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
@@ -245,9 +271,7 @@ th { font-weight: 500; color: var(--text-muted); font-size: 11px; text-transform
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
 td.nw { white-space: nowrap; }
 tbody tr.sel td { background: var(--surface-2); }
-#overview tbody tr { cursor: pointer; }
-#overview tbody tr:hover td { background: var(--surface-2); }
-.muted { color: var(--text-muted); }
+#overview tbody tr { cursor: pointer; }.muted { color: var(--text-muted); }
 details { margin-top: 8px; font-size: 13px; }
 details summary { cursor: pointer; color: var(--text-secondary); }
 details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
@@ -291,6 +315,11 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
   .card, .tile { padding: 14px; }
   .wordmark .wm-main { font-size: 24px; }
   .btn { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover, .btn:hover, select:hover { background: var(--surface-2); }
+  .heat .cell:hover { outline: 2px solid var(--text-primary); outline-offset: -1px; }
+  #overview tbody tr:hover td { background: var(--surface-2); }
 }
 @media (prefers-reduced-motion: reduce) {
   .reveal { animation: none; }

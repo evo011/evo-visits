@@ -49,6 +49,9 @@ class ExportSiteTestCase(unittest.TestCase):
         (self.out / "api" / "gym").mkdir(parents=True, exist_ok=True)
         (self.out / "api" / "weekly").mkdir(parents=True, exist_ok=True)
         (self.out / "api" / "gym" / "alt.json").write_text("{}", encoding="utf-8")
+        # veraltete Schriftdatei, die ersetzt werden muss
+        (self.out / "fonts").mkdir(exist_ok=True)
+        (self.out / "fonts" / "alt.woff2").write_bytes(b"alt")
 
         ctx = FakeContext(weather_map=synth_weather())
         res = export_site(self.cfg, self.store, self.out, ctx=ctx, now=NOW_TS)
@@ -61,6 +64,13 @@ class ExportSiteTestCase(unittest.TestCase):
         self.assertIn(f'"generated_at": {NOW_TS}', html)
         self.assertIn("<script>", html)
         self.assertEqual((self.out / ".nojekyll").read_text(encoding="utf-8"), "")
+
+        # Schriften mitgeliefert, index.html laedt sie lokal statt von Google Fonts
+        self.assertTrue((self.out / "fonts" / "big-shoulders-display.woff2").is_file())
+        self.assertTrue((self.out / "fonts" / "OFL-GeistMono.txt").is_file())
+        self.assertFalse((self.out / "fonts" / "alt.woff2").exists())
+        self.assertNotIn("fonts.googleapis.com", html)
+        self.assertIn("fonts/geist-mono.woff2", html)
 
         def load(p):
             return json.loads((self.out / p).read_text(encoding="utf-8"))

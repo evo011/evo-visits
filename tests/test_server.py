@@ -1,15 +1,19 @@
 import random
 import tempfile
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 from unittest import mock
 
-from evo.config import Config
+from evo.config import WEB_DIR, Config
 from evo.context import WeatherHour
 from evo.fetch import FetchResult
 from evo.forecast import get_tz
-from evo.server import App, Collector
+from evo.server import App, Collector, make_handler
 from evo.store import Reading, Store
 
 TZ = get_tz("Europe/Berlin")
@@ -195,6 +199,56 @@ class ServerAppTestCase(unittest.TestCase):
             out = self.app.api_weekly(self.q(gym="EVO Unterbilk"))
         self.assertNotIn("error", out)
         self.assertTrue(out["days"])
+
+
+class FontsRouteTestCase(unittest.TestCase):
+    """GET /fonts/<name> ueber einen echten HTTP-Server auf 127.0.0.1."""
+
+    @classmethod
+    def setUpClass(cls):
+        tmp = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(tmp.cleanup)
+        store = Store(str(Path(tmp.name) / "visits.db"))
+        cfg = Config()
+        cfg.db_path = str(Path(tmp.name) / "visits.db")
+        cls.httpd = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(App(cfg, store, None)))
+        cls.base = f"http://127.0.0.1:{cls.httpd.server_port}"
+        cls.thread = threading.Thread(target=cls.httpd.serve_forever, daemon=True)
+        cls.thread.start()
+        cls.addClassCleanup(cls.httpd.shutdown)
+        cls.addClassCleanup(cls.httpd.server_close)
+
+    def get(self, path):
+        req = urllib.request.Request(self.base + path, method="GET")
+        with urllib.request.urlopen(req) as r:
+            return r.status, r.headers.get("Content-Type", ""), r.read()
+
+    def get_expect_error(self, path):
+        try:
+            urllib.request.urlopen(self.base + path)
+        except urllib.error.HTTPError as e:
+            return e.code
+        self.fail(f"erwartet 404 fuer {path}")
+
+    def test_font_woff2(self):
+        status, ctype, body = self.get("/fonts/geist-mono.woff2")
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "font/woff2")
+        self.assertEqual(body, (WEB_DIR / "fonts" / "geist-mono.woff2").read_bytes())
+
+    def test_font_txt(self):
+        status, ctype, _ = self.get("/fonts/OFL-GeistMono.txt")
+        self.assertEqual(status, 200)
+        self.assertTrue(ctype.startswith("text/plain"))
+
+    def test_font_missing(self):
+        self.assertEqual(self.get_expect_error("/fonts/gibtsnicht.woff2"), 404)
+
+    def test_font_traversal_encoded(self):
+        self.assertEqual(self.get_expect_error("/fonts/..%2Fconfig.py"), 404)
+
+    def test_font_traversal_plain(self):
+        self.assertEqual(self.get_expect_error("/fonts/../x"), 404)
 
 
 class CollectorTestCase(unittest.TestCase):

@@ -62,6 +62,24 @@ def _cleanup_old(out_dir: Path, subdir: str, keep: set) -> None:
             p.unlink()
 
 
+def _copy_fonts(out_dir: Path, written: list) -> None:
+    """web/fonts nach out_dir/fonts kopieren; alte Dateien dort vorher entfernen."""
+    src = WEB_DIR / "fonts"
+    dst = out_dir / "fonts"
+    if dst.is_dir():
+        for p in dst.iterdir():
+            if p.is_file():
+                p.unlink()
+    if not src.is_dir():
+        return
+    dst.mkdir(parents=True, exist_ok=True)
+    for p in sorted(src.iterdir()):
+        if p.is_file():
+            target = dst / p.name
+            target.write_bytes(p.read_bytes())
+            written.append(target)
+
+
 def export_site(cfg: Config, store: Store, out_dir: Path,
                 ctx=None, now: Optional[int] = None) -> dict:
     """Alle API-Endpunkte als Dateien nach out_dir schreiben und index.html dazulegen.
@@ -105,5 +123,7 @@ def export_site(cfg: Config, store: Store, out_dir: Path,
 
     _cleanup_old(out_dir, "gym", gym_keep)
     _cleanup_old(out_dir, "weekly", weekly_keep)
+
+    _copy_fonts(out_dir, written)
 
     return {"gyms": len(gyms), "files": len(written), "out": str(out_dir)}
