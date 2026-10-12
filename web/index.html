@@ -112,9 +112,11 @@ button:disabled { opacity: .6; cursor: progress; }
 .perfect { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; margin: 6px 0 10px; }
 .perfect .mini { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
 #bestCard .best li { flex-wrap: wrap; row-gap: 4px; }
+#bestCard .best li.top { box-shadow: inset 3px 0 0 var(--series-2); padding-left: 8px; }
 #bestCard .best li.top b { font-weight: 800; }
 #bestCard .rgt { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 #bestCard .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
+#bestCard .when .pill { margin-left: 6px; }
 .card { margin-bottom: 12px; }
 .chart { position: relative; width: 100%; height: 280px; transition: opacity .2s; }
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
@@ -148,6 +150,7 @@ table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); }
 th { font-weight: 600; color: var(--text-secondary); font-size: 13px; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.nw { white-space: nowrap; }
 tbody tr.sel td { background: var(--surface-2); }
 #overview tbody tr { cursor: pointer; }
 #overview tbody tr:hover td { background: var(--surface-2); }
@@ -177,6 +180,7 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
 .day .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; }
 .day .pill.hl { border: 1px solid var(--series-2); }
 .day .de { color: var(--text-secondary); margin-top: auto; }
+.day .de span { white-space: nowrap; }
 .wxnote { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 #effectsCard h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 14px 0 4px; }
 #effectsCard .fx-line { font-size: 13px; margin: 0 0 4px; }
@@ -228,25 +232,6 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
 
     <div class="tiles" id="tiles"></div>
 
-    <div class="card">
-      <h2 id="fcTitle">Heute und Prognose</h2>
-      <p class="sub" id="fcSub"></p>
-      <div class="legend" id="fcLegend"></div>
-      <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
-      <div class="dayswrap"><div class="days" id="fcDays"></div><div class="wxnote" id="fcWxNote" hidden>Wetter noch nicht geladen</div></div>
-      <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
-    </div>
-
-    <div class="card" id="effectsCard">
-      <h2>Was die Auslastung beeinflusst</h2>
-      <p class="sub" id="fxSub"></p>
-      <div class="tablewrap"><table id="fxTable"></table></div>
-      <h3>Prüfung (Backtest)</h3>
-      <div id="fxBacktest"></div>
-      <h3>Datenquellen</h3>
-      <div id="fxSources"></div>
-    </div>
-
     <div class="card" id="bestCard">
       <h2>Beste Zeit fürs Gym</h2>
       <p class="sub">Wann du am meisten Platz hast – aus Prognose und Historie.</p>
@@ -272,6 +257,25 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
           <p class="mini" id="weeklyNote"></p>
         </div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2 id="fcTitle">Heute und Prognose</h2>
+      <p class="sub" id="fcSub"></p>
+      <div class="legend" id="fcLegend"></div>
+      <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
+      <div class="dayswrap"><div class="days" id="fcDays"></div><div class="wxnote" id="fcWxNote" hidden>Wetter noch nicht geladen</div></div>
+      <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+    </div>
+
+    <div class="card" id="effectsCard">
+      <h2>Was die Auslastung beeinflusst</h2>
+      <p class="sub" id="fxSub"></p>
+      <div class="tablewrap"><table id="fxTable"></table></div>
+      <h3>Prüfung (Backtest)</h3>
+      <div id="fxBacktest"></div>
+      <h3>Datenquellen</h3>
+      <div id="fxSources"></div>
     </div>
 
     <div class="card">
@@ -795,7 +799,7 @@ function renderDays() {
     c.append(pills);
     const e = day.effect_pct;
     let etxt = "–";
-    if (e != null) { const r = Math.round(e); etxt = r === 0 ? "±0 %" : (r > 0 ? "+" : "−") + Math.abs(r) + " %"; }
+    if (e != null) { const r = Math.round(e); etxt = r === 0 ? "±0 %" : (r > 0 ? "+" : "−") + Math.abs(r) + " %"; }
     const de = el("div", { class: "de" }, "Effekt ");
     de.append(el("span", {}, etxt));
     c.append(de);
@@ -819,7 +823,7 @@ function renderEffects() {
   const spanOf = (f) => {
     if (!f || f.status !== "aktiv") return "–";
     const s = (x) => x > 0 ? "+" : x < 0 ? "−" : "±";
-    return `${s(f.lo_pct)}${nf(Math.abs(f.lo_pct))} bis ${s(f.hi_pct)}${nf(Math.abs(f.hi_pct))} %`;
+    return `${s(f.lo_pct)}${nf(Math.abs(f.lo_pct))} bis ${s(f.hi_pct)}${nf(Math.abs(f.hi_pct))} %`;
   };
   const rows = [
     ["Regen", "je mm pro Stunde", "rain"],
@@ -836,7 +840,7 @@ function renderEffects() {
     td0.append(el("b", {}, name), el("div", { class: "mini" }, note));
     tr.append(td0);
     tr.append(el("td", { class: "num" }, f && f.status === "aktiv" ? fxPct(f.effect_pct) : "–"));
-    tr.append(el("td", { class: "num hide-sm" }, spanOf(f)));
+    tr.append(el("td", { class: "num hide-sm nw" }, spanOf(f)));
     tr.append(el("td", { class: "num hide-sm" }, f ? `${f.active_days} Tage (ab ${f.min_days})` : "–"));
     const tds = el("td");
     tds.append(el("span", { class: "spill" }, f ? f.status : "–"));
@@ -898,7 +902,11 @@ function renderEffects() {
     line(sc.ok, sc.ok === false ? `Ferien: ${sc.error || "nicht verfügbar"}` : `Ferien: ${sc.label} für ${(d.location && d.location.state) || ""}${stand}`);
   }
   const run = state.status && state.status.runs && state.status.runs[0];
-  line(run ? run.ok : null, `Besucherzahlen: EVO, letzter Abruf ${run ? fmtDT(run.ts * 1000) : "–"}`);
+  if (state.status && state.status.demo) {
+    line(null, "Besucherzahlen: Demo-Daten (synthetisch)");
+  } else {
+    line(run ? run.ok : null, `Besucherzahlen: EVO, letzter Abruf ${run ? fmtDT(run.ts * 1000) : "–"}`);
+  }
 }
 
 function hourlyMeans(points) {
@@ -1071,11 +1079,14 @@ function renderBestCard() {
     const rows = bestForecastWindows(d);
     for (const { day, win } of rows) if (win && (!bestFc || win.avg < bestFc.win.avg)) bestFc = { day, win };
     for (const { day, win } of rows) {
-      const li = el("li", win && bestFc && day.date === bestFc.day.date ? { class: "top" } : {});
-      li.append(el("span", { class: "when" }, dayLabel(day) + (win ? " · " + fmtTime(win.start) + "–" + fmtTime(win.end) : "")));
+      const isTop = win && bestFc && day.date === bestFc.day.date;
+      const li = el("li", isTop ? { class: "top" } : {});
+      const when = el("span", { class: "when" }, dayLabel(day) + (win ? " · " + fmtTime(win.start) + "–" + fmtTime(win.end) : ""));
+      if (isTop) when.append(el("span", { class: "pill" }, "beste"));
+      li.append(when);
       if (win) {
         const rgt = el("span", { class: "rgt" });
-        rgt.append(el("b", {}, "~" + nf(win.avg) + " " + unitS), el("span", { class: "mini" }, nf(win.lo) + "–" + nf(win.hi)));
+        rgt.append(el("b", {}, "~" + nf(win.avg) + " " + unitS), el("span", { class: "mini" }, nf(win.lo) + "–" + nf(win.hi)));
         if (day.weather) {
           const wx = el("span", { title: wxText(day.weather.code) });
           wx.textContent = wxIcon(day.weather.code) + " " + Math.round(day.weather.tmax) + "°";
