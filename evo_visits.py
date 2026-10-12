@@ -5,6 +5,7 @@
   python3 evo_visits.py collect    einmal abrufen und speichern (fuer cron)
   python3 evo_visits.py probe      Seite analysieren, Rohdaten nach data/probe/ schreiben
   python3 evo_visits.py demo       Dashboard mit synthetischen Demo-Daten (eigene DB)
+  python3 evo_visits.py context    Wetter + Schulferien der Clubs einmal abrufen und cachen
   python3 evo_visits.py launchd    macOS-Autostart (LaunchAgent-plist) ausgeben
 """
 
@@ -20,7 +21,7 @@ from evo.store import Store
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
-    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "launchd"])
+    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
@@ -60,6 +61,21 @@ def main(argv: list[str]) -> int:
         if not store.gyms():
             print(f"Erzeuge Demo-Daten ... {generate(store, cfg.timezone)} Messpunkte")
         serve(cfg, store, demo=True)
+    elif args.command == "context":
+        from evo.context import Context
+        store = Store(cfg.db_path)
+        gyms = [g["gym"] for g in store.gyms()]
+        if not gyms:
+            print("Keine Clubs in der Datenbank -- vorher 'collect' ausführen.")
+            return 0
+        res = Context(store, cfg).refresh_for_gyms(gyms, force=True)
+        for kind, title in (("weather", "Wetter"), ("school", "Schulferien")):
+            print(f"{title}:")
+            for source, r in res[kind].items():
+                if r["ok"]:
+                    print(f"  {source}: ok, {r['n']} Zeilen" + (" (aus Cache)" if r["cached"] else ""))
+                else:
+                    print(f"  {source}: FEHLER, {r['error']}")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))

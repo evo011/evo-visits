@@ -43,6 +43,24 @@ CITIES = {
 ALIASES = {"koeln": "köln", "cologne": "köln", "duesseldorf": "düsseldorf", "dusseldorf": "düsseldorf",
            "muenchen": "münchen", "munich": "münchen", "nuernberg": "nürnberg", "nuremberg": "nürnberg"}
 
+# Clubnamen der EVO-API enthalten keine Stadt ("EVO Unterbilk"): Stichwort -> Stadtschluessel.
+CLUB_CITIES = {
+    "alexanderplatz": "berlin", "rosenthalerplatz": "berlin", "spittelmarkt": "berlin",
+    "frankfurtertor": "berlin", "westend": "berlin", "westkreuz": "berlin",
+    "europacity": "berlin", "neuemälzerei": "berlin",
+    "pragerstraße": "dresden", "pragerstrasse": "dresden",
+    "leflair": "düsseldorf", "unterbilk": "düsseldorf",
+    "blankenese": "hamburg", "ottensen": "hamburg", "stadthausbrücke": "hamburg", "schanze": "hamburg",
+    "belgischesviertel": "köln", "ehrenstr": "köln",
+    "maxvorstadt": "münchen", "glockenbach": "münchen", "lehel": "münchen", "rotkreuzplatz": "münchen",
+    "dernschehöfe": "wiesbaden",
+}
+
+
+def _letters_only(s: str) -> str:
+    """Kleingeschrieben, nur Buchstaben (inkl. Umlaute) -- "EVO Dern'sche Höfe" -> "evodernschehöfe"."""
+    return "".join(ch for ch in s.lower() if ch.isalpha())
+
 
 def city_location(name: str) -> Optional[Location]:
     key = ALIASES.get(name.strip().lower(), name.strip().lower())
@@ -65,6 +83,10 @@ def locate(gym: str, default_city: str, overrides: Optional[dict] = None) -> Loc
     low = gym.lower()
     for alias, key in list(ALIASES.items()) + [(k, k) for k in CITIES]:
         if alias in low:
+            return city_location(key)  # type: ignore[return-value]
+    flat = _letters_only(gym)
+    for word, key in CLUB_CITIES.items():
+        if word in flat:
             return city_location(key)  # type: ignore[return-value]
     return city_location(default_city) or city_location("düsseldorf")  # type: ignore[return-value]
 
