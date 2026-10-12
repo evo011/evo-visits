@@ -1,4 +1,4 @@
-# Faehrt etwa alle 15 Minuten (05-23 Uhr Berliner Zeit) den Sammler:
+# Faehrt etwa alle 15 Minuten (05:45-23:15 Uhr Berliner Zeit) den Sammler:
 # ruft Besucherzahlen der EVO-Visits-API ab, frischt Wetter- und
 # Ferienkontext auf, schreibt die Monats-CSVs (data/visits-YYYY-MM.csv)
 # als Commit zurueck und deployt die statische Seite nach GitHub Pages.
@@ -14,7 +14,7 @@ name: collect
 
 on:
   schedule:
-    # Reserve: startet die Kette neu, falls sie abreisst
+    # Reserve: startet die Kette neu, falls sie abreisst (deckt Sommer- und Winterzeit ab)
     - cron: "0,15,30,45 3-22 * * *"
   workflow_dispatch:
 
@@ -54,7 +54,7 @@ jobs:
       - name: Besucherzahlen abrufen
         id: collect
         continue-on-error: true
-        run: python3 evo_visits.py collect --respect-window --active-hours 05:00-23:00 --mode api
+        run: python3 evo_visits.py collect --respect-window --active-hours 05:45-23:15 --mode api
 
       - name: Wetter und Ferien auffrischen
         continue-on-error: true
@@ -123,11 +123,13 @@ jobs:
           # naechster Termin :00/:15/:30/:45 (volle Viertelstunde), mindestens 2 min Abstand
           next=$(( (now / 900 + 1) * 900 ))
           if [ $(( next - now )) -lt 120 ]; then next=$(( next + 900 )); fi
-          # nachts (23-05 Uhr Berlin) bis 05:00 schlafen, hoechstens 5 h am Stueck
-          h=$(TZ=Europe/Berlin date -d "@$next" +%-H)
-          if [ "$h" -ge 23 ] || [ "$h" -lt 5 ]; then
-            if [ "$h" -ge 23 ]; then day=tomorrow; else day=today; fi
-            target=$(TZ=Europe/Berlin date -d "$(TZ=Europe/Berlin date -d "$day" +%F) 05:00" +%s)
+          # nachts (ausserhalb 05:45-23:15 Berlin) bis 05:45 schlafen, hoechstens 5 h am Stueck
+          hm=$(TZ=Europe/Berlin date -d "@$next" +%H%M); m=$(( 10#${hm:0:2} * 60 + 10#${hm:2:2} ))
+          # Tag: 05:45 (345) bis 23:15 (1395); sonst schlafen bis 05:45, hoechstens 5 h am Stueck
+          if [ "$m" -lt 345 ] || [ "$m" -gt 1395 ]; then
+            if [ "$m" -gt 1395 ]; then day=tomorrow; else day=today; fi
+            target=$(TZ=Europe/Berlin date -d "$(TZ=Europe/Berlin date -d "@$next" +%F) 05:45" +%s)
+            if [ "$day" = tomorrow ]; then target=$(( target + 86400 )); fi
             limit=$(( now + 18000 ))
             next=$(( target < limit ? target : limit ))
           fi

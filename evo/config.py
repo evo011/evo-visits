@@ -35,7 +35,7 @@ class Config:
     url: str = "https://visits.evofitness.de/"
     interval_minutes: int = 10
     # Nur in diesem Fenster wird abgefragt (Clubs haben 6 bis 23 Uhr offen).
-    active_hours: str = "05:30-23:30"
+    active_hours: str = "05:45-23:15"
     timezone: str = "Europe/Berlin"
     host: str = "127.0.0.1"
     port: int = 8765

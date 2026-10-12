@@ -332,7 +332,7 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
   <header>
     <div class="hd-row">
       <span class="brand">
-        <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#17181a"/><rect x="8.5" y="50" width="4" height="14" fill="#f4f4f1"/><rect x="15.5" y="42" width="4" height="22" fill="#f4f4f1"/><rect x="22.5" y="34" width="4" height="30" fill="#f4f4f1"/><rect x="29.5" y="26" width="4" height="38" fill="#f4f4f1"/><rect x="36.5" y="38" width="4" height="26" fill="#f4f4f1"/><rect x="43.5" y="46" width="4" height="18" fill="#f4f4f1"/><rect x="50.5" y="54" width="4" height="10" fill="#2d8a4a"/></svg>
+        <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" style="fill:var(--ink)"/><rect x="8.5" y="50" width="4" height="14" style="fill:var(--chalk)"/><rect x="15.5" y="42" width="4" height="22" style="fill:var(--chalk)"/><rect x="22.5" y="34" width="4" height="30" style="fill:var(--chalk)"/><rect x="29.5" y="26" width="4" height="38" style="fill:var(--chalk)"/><rect x="36.5" y="38" width="4" height="26" style="fill:var(--chalk)"/><rect x="43.5" y="46" width="4" height="18" style="fill:var(--chalk)"/><rect x="50.5" y="54" width="4" height="10" style="fill:var(--plate-green)"/></svg>
         <span class="wordmark">EVO Auslastung</span>
       </span>
       <div class="hd-right">
@@ -1663,6 +1663,15 @@ async function refresh(full = true) {
     $("#emptyInterval").textContent = state.status.interval_minutes;
   }
   if (!has) return;
+  const names = state.gyms.map((g) => g.gym);
+  if (!state.gym) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
+  else if (!names.includes(state.gym)) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
+  syncGymSelect();
+  renderQuickChips();
+  if (full) await loadGym(); else renderOverview();
+}
+
+function syncGymSelect() {
   const sel = $("#gymSel");
   const names = state.gyms.map((g) => g.gym);
   const isQuick = QUICK.some((q) => q.gym === state.gym);
@@ -1673,18 +1682,7 @@ async function refresh(full = true) {
     if (isQuick) sel.append(el("option", { value: "" }, "Andere …"));
     for (const n of names) sel.append(el("option", { value: n }, n));
   }
-  if (!state.gym) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
-  else if (!names.includes(state.gym)) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
-  if (isQuick) {
-    if (!rebuild && sel.options.length && sel.options[0].value !== "") {
-      sel.prepend(el("option", { value: "" }, "Andere …"));
-    }
-    sel.value = "";
-  } else {
-    sel.value = state.gym;
-  }
-  renderQuickChips();
-  if (full) await loadGym(); else renderOverview();
+  sel.value = isQuick ? "" : state.gym;
 }
 
 function renderQuickChips() {
@@ -1702,6 +1700,7 @@ function renderQuickChips() {
 function selectGym(name) {
   if (!name) return;
   state.gym = name; state.bandDay = null;
+  syncGymSelect();
   renderQuickChips();
   loadGym();
 }

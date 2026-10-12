@@ -2,7 +2,7 @@
 
 Schreibt die Live-Besucherzahlen von [visits.evofitness.de](https://visits.evofitness.de/) für alle EVO-Clubs in Deutschland mit, zeigt den Verlauf und sagt voraus, wie voll es in den nächsten Stunden und Tagen wird. Wetter, Feiertage, Brückentage und Schulferien fließen in die Prognose ein. Eine eigene Karte schlägt die beste Zeit fürs Training vor.
 
-**Live:** https://evo011.github.io/evo-visits/ (Abruf zur vollen Viertelstunde zwischen 5 und 23 Uhr, die Seite steht 1–2 Minuten später)
+**Live:** https://evo011.github.io/evo-visits/ (Abruf zur vollen Viertelstunde von 5:45 bis 23:15 Uhr, also eine Viertelstunde vor Öffnung bis eine Viertelstunde nach Schließung; die Seite steht 1–2 Minuten später)
 
 Nur Python 3.9+ mit Standardbibliothek, keine Pakete. Das Dashboard ist eine einzelne HTML-Datei ohne externe Abhängigkeiten. Die Schrift (Archivo, SIL Open Font License) liegt in `web/fonts/` und wird mit ausgeliefert, es gibt keine Anfragen an Google Fonts oder andere Dritte. Die Wetter-Icons stammen aus [Phosphor Icons](https://phosphoricons.com) (MIT) und sind als SVG-Sprite eingebettet.
 
@@ -27,8 +27,8 @@ Die 15 Clubs heißen in der API nur nach ihrem Viertel („EVO Unterbilk“). Di
 
 Das Repo ist öffentlich und enthält nur Code und Besucherzahlen, keine Secrets.
 
-- `.github/workflows/collect.yml` setzt sich selbst fort: Der letzte Job jedes Laufs (`chain`) wartet bis zur nächsten vollen Viertelstunde (:00, :15, :30, :45) und startet den Workflow dann per `workflow_dispatch` neu. Das eingebaute `GITHUB_TOKEN` darf das, ein eigenes Token ist nicht nötig. Nachts schläft die Kette bis 05:00 Uhr (höchstens 5 Stunden am Stück, Grenze für Job-Laufzeiten). Laufen oder warten schon andere Läufe, setzt sie keinen neuen an, so entstehen keine doppelten Ketten.
-- Der Cron `0,15,30,45 3-22 * * *` ist nur Reserve, falls die Kette abreißt. GitHubs Cron-Trigger hat am 12.10.2026 über eine Stunde lang nicht ausgelöst, deshalb die Kette. Cron rechnet in UTC, die Stunden 3–22 decken 5–23 Uhr Berliner Zeit in Sommer- und Winterzeit ab. Das genaue Fenster (05:00–23:00 Berlin) prüft das Skript selbst (`collect --respect-window`). Eine concurrency-Gruppe verhindert überlappende Läufe.
+- `.github/workflows/collect.yml` setzt sich selbst fort: Der letzte Job jedes Laufs (`chain`) wartet bis zur nächsten vollen Viertelstunde (:00, :15, :30, :45) und startet den Workflow dann per `workflow_dispatch` neu. Das eingebaute `GITHUB_TOKEN` darf das, ein eigenes Token ist nicht nötig. Nachts schläft die Kette bis 05:45 Uhr (höchstens 5 Stunden am Stück, Grenze für Job-Laufzeiten). Ein nachts per Hand gestarteter Lauf wartet so lange; wer sofort deployen will, bricht den schlafenden Lauf ab (`gh run cancel`, notfalls `force-cancel` über die API). Laufen oder warten schon andere Läufe, setzt sie keinen neuen an, so entstehen keine doppelten Ketten.
+- Der Cron `0,15,30,45 3-22 * * *` ist nur Reserve, falls die Kette abreißt. GitHubs Cron-Trigger hat am 12.10.2026 über eine Stunde lang nicht ausgelöst, deshalb die Kette. Cron rechnet in UTC, die Stunden 3–22 decken 5:45–23:15 Uhr Berliner Zeit in Sommer- und Winterzeit ab. Das genaue Fenster (05:45–23:15 Berlin) prüft das Skript selbst (`collect --respect-window`). Eine concurrency-Gruppe verhindert überlappende Läufe.
 - Reißt die Kette ab und der Cron springt nicht an, genügt ein Start per Hand: `gh workflow run collect.yml -R evo011/evo-visits`.
 - Ablauf je Lauf: Monats-CSVs einlesen, abrufen, Wetter und Ferien auffrischen, `data/visits-YYYY-MM.csv` committen, statische Seite bauen (`export --out site`) und per `actions/deploy-pages` veröffentlichen.
 - Die CSVs sind die Quelle der Wahrheit. `data/visits.db` (SQLite) kommt nicht ins Git, sondern liegt im Actions-Cache, damit Wetter und Ferien nicht bei jedem Lauf neu geholt werden.
@@ -46,7 +46,7 @@ python3 evo_visits.py serve     # Sammler + Dashboard auf http://127.0.0.1:8765
 python3 evo_visits.py demo      # Dashboard mit synthetischen Daten, Wetter und Ferien (klar als Demo markiert)
 ```
 
-`serve` fragt alle 10 Minuten zwischen 05:30 und 23:30 Uhr ab und speichert in `data/visits.db`. Ein zweiter Abruf innerhalb von 10 Minuten wird übersprungen, auch über „Jetzt abrufen“. Wetter und Ferien frischt der Sammler nach jedem Abruf auf (gedrosselt auf stündlich bzw. wöchentlich).
+`serve` fragt alle 10 Minuten zwischen 05:45 und 23:15 Uhr ab und speichert in `data/visits.db`. Ein zweiter Abruf innerhalb von 10 Minuten wird übersprungen, auch über „Jetzt abrufen“. Wetter und Ferien frischt der Sammler nach jedem Abruf auf (gedrosselt auf stündlich bzw. wöchentlich).
 
 Weitere Kommandos:
 
@@ -92,7 +92,7 @@ Einstellungen (im Browser gespeichert): Wochentage, Zeitfenster Mo–Fr (Standar
 
 ## Konfiguration
 
-Optionen mit Defaults stehen in `evo/config.py`, eigene Werte in `config.json` (Vorlage `config.example.json`): `interval_minutes` (10), `active_hours` („05:30-23:30“), `port` (8765), `mode` („auto“, „api“, „static“, „browser“), `history_weeks` (10), `half_life_days` (21). Kommandozeile geht vor: `--interval`, `--port`, `--mode`, `--active-hours`.
+Optionen mit Defaults stehen in `evo/config.py`, eigene Werte in `config.json` (Vorlage `config.example.json`): `interval_minutes` (10), `active_hours` („05:45-23:15“), `port` (8765), `mode` („auto“, „api“, „static“, „browser“), `history_weeks` (10), `half_life_days` (21). Kommandozeile geht vor: `--interval`, `--port`, `--mode`, `--active-hours`.
 
 `mode` „auto“ nutzt zuerst die EVO-API und fällt sonst auf die alte Heuristik zurück (eingebettetes JSON, API-URLs in JS-Bundles, Text-Heuristik, optional Playwright mit `pip3 install playwright && python3 -m playwright install chromium`).
 

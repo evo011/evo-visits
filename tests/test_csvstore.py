@@ -101,6 +101,15 @@ class ActiveWindowTestCase(unittest.TestCase):
     def test_inside(self):
         self.assertTrue(in_active_window(self.cfg, self._ts("12:00")))
 
+    def test_window_boundaries_0545_2315(self):
+        cfg = Config()
+        cfg.active_hours = "05:45-23:15"
+        cfg.timezone = "Europe/Berlin"
+        self.assertFalse(in_active_window(cfg, self._ts("05:44")))
+        self.assertTrue(in_active_window(cfg, self._ts("05:45")))
+        self.assertTrue(in_active_window(cfg, self._ts("23:15")))
+        self.assertFalse(in_active_window(cfg, self._ts("23:16")))
+
 
 class CollectWindowCliTestCase(unittest.TestCase):
     def test_collect_respects_window(self):
