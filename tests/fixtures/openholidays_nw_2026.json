@@ -1,0 +1,128 @@
+[
+ {
+  "id": "18670b9c-54e8-422b-b8f9-a9973825e6a4",
+  "startDate": "2025-12-22",
+  "endDate": "2026-01-06",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Weihnachtsferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ },
+ {
+  "id": "d94a97e5-9f96-451a-82f8-9ebb77887db8",
+  "startDate": "2026-03-30",
+  "endDate": "2026-04-11",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Osterferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ },
+ {
+  "id": "c775a6dd-cb27-45ae-ad38-60d8929bd6be",
+  "startDate": "2026-05-26",
+  "endDate": "2026-05-26",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Pfingstferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ },
+ {
+  "id": "b698a2eb-afcf-4d85-baca-f8dd4592da2c",
+  "startDate": "2026-07-20",
+  "endDate": "2026-09-01",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Sommerferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ },
+ {
+  "id": "8ed1f201-881e-4ea9-b7b7-5769d7bb0ec2",
+  "startDate": "2026-10-17",
+  "endDate": "2026-10-31",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Herbstferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ },
+ {
+  "id": "fd4da962-219c-465e-9021-f3bcbe5ceacd",
+  "startDate": "2026-12-23",
+  "endDate": "2027-01-06",
+  "type": "School",
+  "name": [
+   {
+    "language": "DE",
+    "text": "Weihnachtsferien"
+   }
+  ],
+  "regionalScope": "Regional",
+  "temporalScope": "FullDay",
+  "nationwide": false,
+  "subdivisions": [
+   {
+    "code": "DE-NW",
+    "shortName": "NW"
+   }
+  ]
+ }
+]

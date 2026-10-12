@@ -1,4 +1,7 @@
-data/
+# Laufzeitdaten bleiben lokal, nur die Monats-CSVs mit Besucherzahlen gehoeren ins Repo
+data/*
+!data/visits-*.csv
+site/
 config.json
 __pycache__/
 *.pyc
