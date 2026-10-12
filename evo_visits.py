@@ -24,7 +24,7 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
-    ap.add_argument("--mode", choices=["auto", "static", "browser"], help="Abrufstrategie")
+    ap.add_argument("--mode", choices=["auto", "static", "browser", "api"], help="Abrufstrategie")
     ap.add_argument("--no-collect", action="store_true", help="nur Dashboard, kein Sammler")
     args = ap.parse_args(argv)
 
@@ -42,7 +42,10 @@ def main(argv: list[str]) -> int:
     elif args.command == "collect":
         from evo.fetch import collect_once
         res = collect_once(cfg, Store(cfg.db_path))
-        print(f"{len(res.readings)} Clubs gespeichert ({res.source})")
+        if res.source == "skipped:min-interval":
+            print("Letzter Abruf vor weniger als 10 Minuten, übersprungen.")
+        else:
+            print(f"{len(res.readings)} Clubs gespeichert ({res.source})")
         for r in res.readings:
             print(f"  {r.gym}: {r.count if r.count is not None else str(r.pct) + ' %'}"
                   + (f" / {r.capacity:g}" if r.capacity else ""))

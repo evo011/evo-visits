@@ -44,6 +44,8 @@ class Collector(threading.Thread):
         with self.lock:
             try:
                 res = collect_once(self.cfg, self.store)
+                if res.source == "skipped:min-interval":
+                    return {"ok": False, "error": "Letzter Abruf ist keine 10 Minuten her."}
                 self.last_error = None
                 log(f"{len(res.readings)} Clubs gespeichert ({res.source})")
                 return {"ok": True, "n": len(res.readings), "source": res.source}

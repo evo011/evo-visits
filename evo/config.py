@@ -21,8 +21,8 @@ class Config:
     timezone: str = "Europe/Berlin"
     host: str = "127.0.0.1"
     port: int = 8765
-    # auto: erst plain HTTP, dann Headless-Browser (falls Playwright installiert)
-    # static: nur plain HTTP, browser: nur Playwright
+    # auto: echte EVO-API, dann plain HTTP, dann Headless-Browser (falls Playwright installiert)
+    # static: EVO-API und plain HTTP, kein Browser; browser: nur Playwright; api: nur die echte EVO-API
     mode: str = "auto"
     # Optional eigener Chromium-Pfad fuer den Browser-Modus (sonst der von 'playwright install')
     browser_path: Optional[str] = None

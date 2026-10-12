@@ -86,6 +86,11 @@ class Store:
             ).fetchall()
         return [dict(zip(("ts", "ok", "n", "source", "error"), r)) for r in rows]
 
+    def last_sample_ts(self) -> Optional[int]:
+        with self._conn() as c:
+            row = c.execute("SELECT MAX(ts) FROM samples").fetchone()
+        return int(row[0]) if row and row[0] is not None else None
+
     def gyms(self) -> list[dict]:
         with self._conn() as c:
             rows = c.execute(

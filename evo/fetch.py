@@ -354,11 +354,20 @@ def _iterate_select(page, responses, json_responses, log: Optional[ProbeLog]) ->
 # ---------------------------------------------------------------------------------------------
 # Oeffentliche API
 
+def _evo_api(cfg: Config, log: Optional[ProbeLog] = None) -> Optional[FetchResult]:
+    from . import evo_api  # erst hier importieren: evo_api importiert fetch zurueck
+    return evo_api.fetch_evo_api(cfg, log)
+
+
 def fetch_readings(cfg: Config) -> FetchResult:
     errors: list[str] = []
     steps = []
     if cfg.mode in ("auto", "static"):
-        steps += [("manual", _from_manual), ("cached", _from_cached), ("static", _from_static)]
+        steps.append(("manual", _from_manual))
+    if cfg.mode in ("auto", "static", "api"):
+        steps.append(("evo_api", _evo_api))
+    if cfg.mode in ("auto", "static"):
+        steps += [("cached", _from_cached), ("static", _from_static)]
     if cfg.mode in ("auto", "browser") and playwright_available():
         steps.append(("browser", _from_browser))
     for name, fn in steps:
@@ -376,7 +385,12 @@ def fetch_readings(cfg: Config) -> FetchResult:
                      " Details: 'python3 evo_visits.py probe'.")
 
 
-def collect_once(cfg: Config, store: Store) -> FetchResult:
+def collect_once(cfg: Config, store: Store, force: bool = False) -> FetchResult:
+    if not force:
+        last = store.last_sample_ts()
+        min_interval = float(cfg.extra.get("min_interval_seconds", 570))
+        if last is not None and time.time() - last < min_interval:
+            return FetchResult([], "skipped:min-interval")
     ts = int(time.time())
     try:
         res = fetch_readings(cfg)
@@ -394,7 +408,7 @@ def probe(cfg: Config) -> Path:
     out.mkdir(parents=True, exist_ok=True)
     log = ProbeLog()
     log.add(f"Probe {cfg.url} um {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    for name, fn in (("static", _from_static), ("browser", _from_browser)):
+    for name, fn in (("evo-api", _evo_api), ("static", _from_static), ("browser", _from_browser)):
         if name == "browser" and not playwright_available():
             log.add("[browser] Playwright nicht installiert, uebersprungen")
             continue
