@@ -231,13 +231,13 @@ class FontsRouteTestCase(unittest.TestCase):
         self.fail(f"erwartet 404 fuer {path}")
 
     def test_font_woff2(self):
-        status, ctype, body = self.get("/fonts/geist-mono.woff2")
+        status, ctype, body = self.get("/fonts/archivo.woff2")
         self.assertEqual(status, 200)
         self.assertEqual(ctype, "font/woff2")
-        self.assertEqual(body, (WEB_DIR / "fonts" / "geist-mono.woff2").read_bytes())
+        self.assertEqual(body, (WEB_DIR / "fonts" / "archivo.woff2").read_bytes())
 
     def test_font_txt(self):
-        status, ctype, _ = self.get("/fonts/OFL-GeistMono.txt")
+        status, ctype, _ = self.get("/fonts/OFL-Archivo.txt")
         self.assertEqual(status, 200)
         self.assertTrue(ctype.startswith("text/plain"))
 

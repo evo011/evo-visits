@@ -106,11 +106,15 @@ header {
 .hd-row { display: flex; align-items: center; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .brand svg { flex: 0 0 auto; }
-.wordmark { font-size: 15px; font-weight: 650; line-height: 1; }
+.wordmark { font-size: 15px; font-weight: 650; line-height: 1; white-space: nowrap; }
 .hd-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 #stand { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
 #stand.err { color: var(--plate-red); }
 .hd-right a { color: var(--ink-2); font-size: 13px; text-decoration: underline; }
+@media (max-width: 559px) {
+  #stand.demo { display: none; }
+  .noword { display: none; }
+}
 #clubbar { display: flex; gap: 0; margin-top: 10px; }
 #clubbar .seg { flex: 1; }
 #gymSel { max-width: 40%; }
@@ -140,7 +144,14 @@ button, select, .btn {
 button:active, select:active, .btn:active, .seg button:active, .chip:active { transform: scale(0.97); }
 button:focus-visible, select:focus-visible, .btn:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 button:disabled { opacity: .6; cursor: progress; }
-select { appearance: none; }
+select {
+  appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.2 6.2 8 10l3.8-3.8' fill='none' stroke='%2345484d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 14px;
+}
 .banner { background: var(--chalk-2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
 .banner strong { font-weight: 650; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 16px; max-width: 100%; }
@@ -151,15 +162,42 @@ select { appearance: none; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--chalk); }
 #clubbar .seg { border-radius: 8px; }
 #bestCard .cols { display: grid; grid-template-columns: 1fr; gap: 0 28px; }
-@media (min-width: 900px) { #bestCard .cols { grid-template-columns: 1fr 1fr; } }
-#bestCard .best li { flex-wrap: wrap; row-gap: 4px; }
-#bestCard .best li.top b.best-tag { color: var(--plate-green); font-weight: 650; }
-.best .when, .rgt, td.num, th.num, .tick { font-variant-numeric: tabular-nums; font-stretch: 87.5%; }
-.best .when { font-size: 13px; }
-#bestCard .rgt { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
-#bestCard .pill { background: var(--chalk-2); border-radius: 8px; padding: 1px 7px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
-#bestCard .when .pill { margin-left: 6px; }
+@media (min-width: 760px) { #bestCard .cols { grid-template-columns: 1fr 1fr; } }
+.dep { width: 100%; }
+.dep td, .dep th { padding: 6px 8px 6px 0; overflow-wrap: break-word; }
+.dep th { font-size: 13px; font-weight: 600; color: var(--ink-3); border-bottom: 1px solid var(--steel); }
+.dep tbody tr { min-height: 44px; }
+.dep tbody tr:nth-child(even) { background: color-mix(in srgb, var(--chalk-2) 60%, transparent); }
+.dep tbody tr.top td { color: var(--plate-green); }
+.dep tbody tr.top td.sub { color: var(--ink-3); }
+.dep .t { font-size: 18px; font-weight: 650; font-stretch: 87.5%; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dep .t .day2 { display: none; font-size: 13px; font-weight: 450; color: var(--ink-2); font-stretch: 100%; }
+.dep .t .note2 { display: none; font-size: 13px; font-weight: 450; color: var(--ink-3); font-stretch: 100%; }
+.dep .t .best-tag { font-size: 13px; font-weight: 600; color: var(--plate-green); }
+.dep td.num, .dep th.num { text-align: right; }
+.dep .big { font-weight: 650; white-space: nowrap; }
+.dep .under { display: block; font-size: 12px; font-weight: 450; color: var(--ink-3); }
+.dep .under.mu2 { display: none; }
+.dep .wxline { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--ink-2); }
+.dep .note { font-size: 13px; color: var(--ink-3); }
 #bestCard .seg button, #bestDur button { min-height: 40px; }
+@media (max-width: 559px) {
+  .dep { display: block; width: 100%; }
+  .dep thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .dep tbody { display: block; }
+  .dep tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; column-gap: 12px; align-items: center; padding: 10px 8px; }
+  .dep td { display: block; padding: 0; min-width: 0; width: auto; }
+  .dep td.dayc, .dep td.mhc, .dep td.notec { display: none; }
+  .dep .t { white-space: normal; }
+  .dep .t .day2, .dep .t .note2 { display: block; }
+  .dep td.num { text-align: right; white-space: nowrap; }
+  .dep .under.mu2 { display: block; }
+  .dep td.wkc .under { display: block; }
+  .dep td.nofc { grid-column: 2 / -1; white-space: normal; text-align: left; }
+  .dep tbody tr td:only-child { grid-column: 1 / -1; }
+}
+td.num, th.num, .tick, .bandhours span { font-variant-numeric: tabular-nums; }
+.tick, .dep .t { font-stretch: 87.5%; }
 .perfectline { font-size: 18px; font-weight: 650; color: var(--ink); margin: 14px 0 16px; }
 .perfectline .t { color: var(--plate-green); }
 .perfectline .mini { font-size: 13px; font-weight: 450; }
@@ -207,34 +245,54 @@ td.num, th.num { text-align: right; }
 td.nw { white-space: nowrap; }
 tbody tr.sel td { background: var(--chalk-2); }
 #overview tbody tr { cursor: pointer; }.muted { color: var(--text-muted); }
-.best { list-style: none; padding: 0; margin: 8px 0 0; }
-.best li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--steel); }
-.best li b { font-weight: 600; }
-.best .when { color: var(--text-secondary); }
 .inline-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--text-secondary); }
 .inline-controls select { padding: 0 6px; font-size: 13px; min-height: 32px; }
-.empty { text-align: center; padding: 48px 16px; color: var(--text-secondary); }
-.empty code, .banner code { background: var(--chalk-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+section.empty { text-align: center; padding: 48px 16px; color: var(--text-secondary); }
+section.empty code, .banner code { background: var(--chalk-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 .err { color: var(--critical); }
 .hidden { display: none !important; }
 .tooltip.wide { white-space: normal; max-width: 240px; }
 .tooltip .extra { font-size: 11px; color: var(--text-secondary); margin-top: 2px; white-space: pre-line; }
-.dayswrap { margin-top: 10px; }
-.days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(84px, 1fr); gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-.day { background: var(--chalk-2); border-radius: 8px; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
-.day .dh { font-size: 15px; font-weight: 650; }
-.day .wx { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
-.day .pr { color: var(--text-secondary); }
-.day .pills { display: flex; flex-wrap: wrap; gap: 4px; }
-.day .pill { background: var(--chalk); border-radius: 8px; padding: 1px 7px; font-size: 11px; line-height: 1.5; }
-.day .pill.hl { border: 1px solid var(--hot); }
-.day .pill.school { border: 1px solid var(--accent); }
-.day .de { color: var(--text-secondary); margin-top: auto; }
-.day .de span { white-space: nowrap; }
-.wxnote { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+/* Belegungsband */
+#band { margin: 24px 0 40px; }
+.bandtabs { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+.bandtabs::-webkit-scrollbar { display: none; }
+.bandtabs button { background: none; border: 0; border-radius: 0; padding: 0 0 6px; min-height: 0; font-size: 15px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.bandtabs button[aria-selected="true"] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+.bandread { font-size: 13px; color: var(--ink-2); min-height: 20px; margin: 0 0 4px; }
+.bandread b { font-weight: 650; color: var(--ink); }
+.bandbest { position: relative; height: 18px; font-size: 13px; font-weight: 600; color: var(--plate-green); }
+.bandbest .bl { position: absolute; bottom: 0; height: 2px; background: var(--plate-green); }
+.bandbest .bt { position: absolute; top: 0; white-space: nowrap; }
+.bandnow { position: absolute; bottom: 0; width: 1px; height: 100%; background: var(--ink-3); }
+.bandnow span { position: absolute; top: -15px; left: 3px; font-size: 13px; font-weight: 450; color: var(--ink-3); }
+.bandbox { position: relative; height: 104px; }
+.bandgrid { display: grid; grid-template-columns: repeat(68, minmax(0, 1fr)); gap: 2px; height: 100%; align-items: end; }
+.bandgrid .bar { height: 100%; transform-origin: bottom; border-radius: 1.5px 1.5px 0 0; background: var(--ink); transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+.bandgrid .bar.exp { background: var(--steel); }
+.bandgrid .bar.best { background: var(--plate-green); }
+.bandgrid .bar.gap { background: transparent; }
+.bandgrid .bar.dim { opacity: .55; }
+.bandgrid .bar.gap.dim { opacity: 1; }
+.bandbase { border-top: 1px solid var(--steel); }
+.bandhours { position: relative; height: 17px; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+.bandhours span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.bandhours span.first { transform: none; }
+.bandempty { font-size: 15px; color: var(--ink-2); margin: 12px 0; }
+.bandday { font-size: 15px; color: var(--ink-2); margin: 10px 0 0; }
+.bandday .ic { vertical-align: -3px; }
+.bandday .sep { color: var(--ink-3); }
+@media (max-width: 560px) {
+  .bandbox { height: 80px; }
+  .bandgrid { gap: 1px; }
+}
+@media (prefers-reduced-motion: reduce) { .bandgrid .bar { transition: none; } }
 #effectsCard .fx-line { font-size: 13px; margin: 0 0 4px; }
 .mini { font-size: 12px; color: var(--text-muted); }
-.spill { display: inline-block; background: var(--chalk-2); border-radius: 8px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
+.spill { font-size: 13px; color: var(--ink-2); }
+.spill.on { color: var(--plate-green); }
+.spill.off { color: var(--ink-3); }
+.spill.bad { color: var(--plate-red); }
 .src { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); margin: 3px 0; }
 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; background: var(--ink-3); }
 .dot.ok { background: var(--plate-green); }
@@ -279,7 +337,7 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
       </span>
       <div class="hd-right">
         <span id="stand"></span>
-        <a id="collectBtn" href="#" title="Sofort einen Abruf starten">Jetzt abrufen</a>
+        <a id="collectBtn" href="#" title="Sofort einen Abruf starten"><span class="noword">Jetzt </span>abrufen</a>
         <a href="/api/export.csv" download>CSV</a>
       </div>
     </div>
@@ -306,6 +364,17 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
       <p class="l4" id="leadMeta"></p>
     </div>
 
+    <section id="band">
+      <div class="bandtabs" id="bandTabs" role="tablist" aria-label="Tag"></div>
+      <p class="bandread" id="bandRead" aria-live="polite"></p>
+      <div class="bandbest" id="bandBest"></div>
+      <div class="bandbox" id="bandBox" tabindex="0" role="img"></div>
+      <div class="bandbase"></div>
+      <div class="bandhours" id="bandHours"></div>
+      <p class="bandday" id="bandDay"></p>
+      <details id="bandTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+    </section>
+
     <section id="bestCard">
       <h2>Beste Zeit</h2>
       <p class="sub">Wann du am meisten Platz hast – aus Prognose und Historie.</p>
@@ -324,12 +393,12 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
       <p class="perfectline" id="perfect"></p>
       <div class="cols">
         <div>
-          <h3>Nächste 7 Tage</h3>
-          <ul class="best" id="nextList"></ul>
+          <h3>Diese Woche</h3>
+          <table class="dep" id="nextTable"></table>
         </div>
         <div>
-          <h3>Generell</h3>
-          <ul class="best" id="weeklyList"></ul>
+          <h3>Aus den letzten Wochen</h3>
+          <table class="dep" id="weeklyTable"></table>
           <p class="mini" id="weeklyNote"></p>
         </div>
       </div>
@@ -357,7 +426,6 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
           </span>
         </label>
       </div>
-      <div class="dayswrap"><div class="days" id="fcDays"></div><div class="wxnote" id="fcWxNote" hidden>Wetter noch nicht geladen</div></div>
       <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
       <h3>Verlauf</h3>
       <div class="chart" id="histChart" tabindex="0" aria-label="Diagramm: gemessene Besucherzahl im Zeitverlauf"></div>
@@ -422,7 +490,7 @@ function loadBest() {
 }
 const state = {
   gym: null, days: store.get("days", 7), horizon: store.get("horizon", 24),
-  best: loadBest(), status: null, gyms: [], data: null, weekly: null,
+  best: loadBest(), status: null, gyms: [], data: null, weekly: null, bandDay: null,
 };
 
 const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -747,7 +815,9 @@ function renderStatus() {
   const last = s.runs[0];
   let text, failed = false;
   if (STATIC) {
-    text = `Stand ${fmtTime(s.generated_at * 1000)}`;
+    const gen = s.generated_at * 1000;
+    const isToday = new Date(gen).toDateString() === new Date().toDateString();
+    text = isToday ? `Stand ${fmtTime(gen)}` : `Stand ${fmtDT(gen)}`;
     failed = !!(last && !last.ok);
   } else if (s.demo) { text = "Demo-Modus"; }
   else if (!last) { text = "warte auf ersten Abruf"; }
@@ -757,6 +827,7 @@ function renderStatus() {
   }
   stand.textContent = failed ? "Abruf fehlgeschlagen" : text;
   stand.classList.toggle("err", failed);
+  stand.classList.toggle("demo", !failed && !!s.demo);
   $("#demoBanner").classList.toggle("hidden", !s.demo);
   const err = $("#errorBanner");
   if (last && !last.ok) {
@@ -879,6 +950,236 @@ function renderLead() {
   l4.textContent = parts.join(" · ");
 }
 
+function bandDayKey(now) {
+  const d = new Date(now);
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function renderBand() {
+  const d = state.data;
+  const nowMs = d.now * 1000;
+  const now = new Date(nowMs);
+  const todayKey = bandDayKey(nowMs);
+  const days = d.days || [];
+  if (!days.length || state.bandDay === null || state.bandDay === undefined) state.bandDay = todayKey;
+  if (!days.some((x) => x.date === state.bandDay)) state.bandDay = todayKey;
+  const selDay = days.find((x) => x.date === state.bandDay) || null;
+  const isToday = state.bandDay === todayKey;
+  const club = gymShort(state.gym);
+  const SL = 15 * 60e3, N = 68, FROM = 6;
+
+  // Tabs
+  const tabs = $("#bandTabs");
+  tabs.textContent = "";
+  const mkTab = (key, label) => {
+    const b = el("button", { type: "button", role: "tab", "aria-selected": String(key === state.bandDay) }, label);
+    b.addEventListener("click", () => { state.bandDay = key; renderBand(); });
+    tabs.append(b);
+  };
+  mkTab(todayKey, "Heute");
+  for (const day of days) {
+    if (day.date === todayKey) continue;
+    mkTab(day.date, dayLabel(day));
+  }
+
+  // Skala über alle Tage identisch
+  let scale = 1;
+  for (const p of d.forecast) if (p[1] != null) scale = Math.max(scale, p[1]);
+  for (const p of d.today_actual) scale = Math.max(scale, p[1]);
+  scale = scale * 1.1;
+
+  // Prognose-Punkte des Tages als Map (Zeitstempel -> [est, lo, hi])
+  const fcMap = new Map();
+  for (const p of d.forecast) {
+    if (p[1] == null) continue;
+    if (bandDayKey(p[0]) !== state.bandDay) continue;
+    fcMap.set(p[0], p);
+  }
+
+  // Bestes Fenster für den Tag
+  let win = null;
+  if (selDay) {
+    const rows = bestForecastWindows(d);
+    for (const r of rows) if (r.win && r.day.date === state.bandDay && (!win || r.win.avg < win.avg)) win = r.win;
+  }
+  const inWin = (ts) => {
+    if (!win) return false;
+    return ts >= win.start && ts < win.end;
+  };
+
+  // Slots
+  const dayStart = new Date(nowMs); dayStart.setHours(FROM, 0, 0, 0);
+  if (state.bandDay !== todayKey) {
+    const [y, m, dd] = state.bandDay.split("-").map(Number);
+    dayStart.setFullYear(y, m - 1, dd);
+  }
+  const slots = [];
+  for (let i = 0; i < N; i++) {
+    const ts = dayStart.getTime() + i * SL;
+    let meas = null, fc = null;
+    if (isToday && ts < nowMs) {
+      let s = 0, n = 0;
+      for (const p of d.today_actual) { if (p[0] >= ts && p[0] < ts + SL && p[1] != null) { s += p[1]; n++; } }
+      if (n) meas = s / n;
+    }
+    const f = fcMap.get(ts);
+    if (f) fc = { est: f[1], lo: f[2], hi: f[3] };
+    slots.push({ ts, meas, fc });
+  }
+  const hasAny = slots.some((s) => s.meas != null || s.fc);
+
+  const box = $("#bandBox");
+  const read = $("#bandRead");
+  const best = $("#bandBest");
+  box.textContent = ""; best.textContent = ""; read.textContent = "";
+  const hours = $("#bandHours");
+  hours.textContent = "";
+  for (const h of [6, 9, 12, 15, 18, 21]) {
+    const sp = el("span", {}, String(h).padStart(2, "0"));
+    const i = (h - FROM) * 4;
+    sp.style.left = (i / (N - 1) * 100) + "%";
+    if (h === FROM) sp.classList.add("first");
+    hours.append(sp);
+  }
+
+  if (!hasAny) {
+    box.setAttribute("aria-label", `Belegung ${isToday ? "heute" : "für " + (selDay ? dayLabel(selDay) : "diesen Tag")} in ${club}`);
+    const p = el("p", { class: "bandempty" }, "Für diesen Tag gibt es noch keine Werte. Die Prognose startet nach dem ersten vollen Messtag.");
+    box.append(p);
+    renderBandDayline(selDay);
+    table($("#bandTable .tablewrap"), ["Stunde", "Wert"], []);
+    return;
+  }
+
+  // Bestes Fenster über dem Band
+  if (win) {
+    const i0 = Math.max(0, Math.round((win.start - dayStart.getTime()) / SL));
+    const i1 = Math.min(N, Math.ceil((win.end - dayStart.getTime()) / SL));
+    const left = i0 / N * 100, width = (i1 - i0) / N * 100;
+    const bl = el("span", { class: "bl" });
+    bl.style.left = left + "%"; bl.style.width = width + "%";
+    best.append(bl);
+    const bt = el("span", { class: "bt" }, `beste Zeit ${fmtTime(win.start)}–${fmtTime(win.end)}`);
+    if (left > 70) {
+      bt.style.left = "auto";
+      bt.style.right = (100 - left - width) + "%";
+    } else {
+      bt.style.left = left + "%";
+    }
+    best.append(bt);
+  }
+
+  // Striche
+  const grid = el("div", { class: "bandgrid", role: "presentation" });
+  let lastMeas = null;
+  for (const s of slots) {
+    const bar = el("span", { class: "bar" });
+    let val = null;
+    if (s.meas != null) { val = s.meas; lastMeas = s.ts; }
+    else if (s.fc) {
+      val = s.fc.est;
+      bar.classList.add(inWin(s.ts) ? "best" : "exp");
+    } else {
+      bar.classList.add("gap");
+    }
+    bar.style.transform = "scaleY(" + (val != null ? Math.max(val / scale, 0.015) : 0) + ")";
+    grid.append(bar);
+  }
+  box.append(grid);
+
+  // Jetzt-Marke
+  if (isToday && nowMs >= dayStart.getTime() && nowMs <= dayStart.getTime() + N * SL) {
+    const pct = (nowMs - dayStart.getTime()) / (N * SL) * 100;
+    const mk = el("span", { class: "bandnow" });
+    mk.style.left = pct + "%";
+    const lb = el("span", {}, "jetzt");
+    if (pct > 85) { lb.style.left = "auto"; lb.style.right = "4px"; }
+    else if (pct < 15) { lb.style.left = "4px"; lb.style.transform = "none"; }
+    else lb.style.left = "3px";
+    mk.append(lb);
+    box.append(mk);
+  }
+
+  // Ablesung: Zeiger oder Tastatur
+  const bars = [...grid.children];
+  const clearRead = () => { read.textContent = ""; bars.forEach((b) => b.classList.remove("dim")); activeSlot = null; };
+  let activeSlot = null;
+  const showSlot = (i) => {
+    const s = slots[i];
+    if (!s || (s.meas == null && !s.fc)) return;
+    activeSlot = i;
+    read.textContent = "";
+    const t = fmtTime(s.ts);
+    if (s.meas != null) read.append(el("b", {}, `${t} Uhr: gemessen ${nf(s.meas)}`));
+    else read.append(el("b", {}, `${t} Uhr: erwartet etwa ${nf(s.fc.est)}`), document.createTextNode(` (${nf(s.fc.lo)} bis ${nf(s.fc.hi)})`));
+    bars.forEach((b, j) => { b.classList.toggle("dim", j !== i); });
+  };
+  box.addEventListener("pointermove", (e) => {
+    const r = box.getBoundingClientRect();
+    const i = Math.floor((e.clientX - r.left) / r.width * N);
+    if (i !== activeSlot) showSlot(Math.max(0, Math.min(N - 1, i)));
+  });
+  box.addEventListener("pointerleave", clearRead);
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { clearRead(); return; }
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const dir = e.key === "ArrowLeft" ? -1 : 1;
+    let i = activeSlot == null ? (dir > 0 ? 0 : N - 1) : activeSlot + dir;
+    while (i >= 0 && i < N && slots[i].meas == null && !slots[i].fc) i += dir;
+    if (i >= 0 && i < N) showSlot(i);
+  });
+
+  // aria-label
+  const bestTxt = win ? `beste Zeit ${fmtTime(win.start)} bis ${fmtTime(win.end)}` : "";
+  const measTxt = lastMeas != null ? `gemessen bis ${fmtTime(lastMeas)}` : "";
+  const labelDay = isToday ? "heute" : "für " + (selDay ? dayLabel(selDay) : "diesen Tag");
+  box.setAttribute("aria-label", `Belegung ${labelDay} in ${club}${measTxt ? ", " + measTxt : ""}${bestTxt ? ", " + bestTxt : ""}`);
+
+  renderBandDayline(selDay);
+
+  // Tabelle: stündlich gemittelt
+  const unitS = d.unit === "percent" ? " %" : "";
+  const tRows = [];
+  for (let h = FROM; h < FROM + 17; h++) {
+    const cells = slots.slice((h - FROM) * 4, (h - FROM) * 4 + 4);
+    const vals = cells.map((s) => s.meas != null ? s.meas : (s.fc ? s.fc.est : null)).filter((v) => v != null);
+    if (!vals.length) continue;
+    const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+    tRows.push([`${h}:00–${h + 1}:00`, nf(m, 1) + unitS]);
+  }
+  table($("#bandTable .tablewrap"), ["Stunde", "Wert"], tRows);
+}
+
+function renderBandDayline(day) {
+  const d = state.data;
+  const p = $("#bandDay");
+  p.textContent = "";
+  if (!day) return;
+  const parts = [];
+  if (day.weather) {
+    const w = day.weather;
+    const wx = el("span", { title: wxText(w.code) });
+    wx.append(wxIcon(w.code), document.createTextNode(` ${Math.round(w.tmax)}° / ${Math.round(w.tmin)}°`));
+    parts.push(wx);
+    if (w.precip >= 0.5) parts.push(`${nf(w.precip, 1)} mm Regen`);
+  } else {
+    parts.push("Wetter noch nicht geladen");
+  }
+  if (day.holiday) parts.push(day.holiday);
+  if (day.school) parts.push(el("span", { title: day.school }, "Schulferien"));
+  if (day.bridge) parts.push("Brückentag");
+  const e = day.effect_pct;
+  if (e != null && Math.abs(e) >= 1) {
+    const r = Math.round(e);
+    parts.push(`Wetter und Kalender ${r > 0 ? "+" : "−"}${Math.abs(r)} %`);
+  }
+  parts.forEach((it, i) => {
+    if (i) p.append(document.createTextNode(", "));
+    p.append(typeof it === "string" ? document.createTextNode(it) : it);
+  });
+}
+
 function renderForecast() {
   const d = state.data, c1 = cssVar("--series-1"), c2 = cssVar("--series-2"), cr = cssVar("--reference");
   const nowMs = d.now * 1000, H = 3600e3, h = state.horizon;
@@ -914,44 +1215,6 @@ function renderForecast() {
     .map((p) => [fmtDT(p[0]), nf(p[1]), nf(p[2]) + "–" + nf(p[3])]);
   table($("#fcTable .tablewrap"), ["Zeit", "Prognose", "Spanne"], rows);
 }
-
-function renderDays() {
-  const d = state.data, box = $("#fcDays");
-  box.textContent = "";
-  const now = new Date(d.now * 1000);
-  const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
-  let anyWeather = false;
-  for (const day of d.days || []) {
-    if (day.weather) anyWeather = true;
-    const c = el("div", { class: "day" });
-    const isToday = day.date === todayStr;
-    const dd = day.date.slice(8, 10) + "." + day.date.slice(5, 7) + ".";
-    c.append(el("div", { class: "dh" }, isToday ? "Heute" : WD[day.weekday] + " " + dd));
-    if (day.weather) {
-      const w = day.weather;
-      const wx = el("div", { class: "wx", title: wxText(w.code), "aria-label": wxText(w.code) });
-      wx.append(wxIcon(w.code), document.createTextNode(`${Math.round(w.tmax)}° / ${Math.round(w.tmin)}°`));
-      c.append(wx);
-      if (w.precip >= 0.5) c.append(el("div", { class: "pr" }, `${nf(w.precip, 1)} mm`));
-    } else {
-      c.append(el("div", { class: "wx muted" }, "–"));
-    }
-    const pills = el("div", { class: "pills" });
-    if (day.holiday) pills.append(el("span", { class: "pill hl" }, day.holiday));
-    if (day.school) pills.append(el("span", { class: "pill school", title: day.school }, "Ferien"));
-    if (day.bridge) pills.append(el("span", { class: "pill" }, "Brückentag"));
-    c.append(pills);
-    const e = day.effect_pct;
-    let etxt = "–";
-    if (e != null) { const r = Math.round(e); etxt = r === 0 ? "±0 %" : (r > 0 ? "+" : "−") + Math.abs(r) + " %"; }
-    const de = el("div", { class: "de" }, "Effekt ");
-    de.append(el("span", {}, etxt));
-    c.append(de);
-    box.append(c);
-  }
-  $("#fcWxNote").hidden = anyWeather || !(d.days || []).length;
-}
-
 const fxPct = (v) => v == null ? "–" : v >= 0.5 ? `+${nf(v)} %` : v <= -0.5 ? `−${nf(Math.abs(v))} %` : "±0 %";
 
 function renderEffects() {
@@ -987,7 +1250,8 @@ function renderEffects() {
     tr.append(el("td", { class: "num hide-sm nw" }, spanOf(f)));
     tr.append(el("td", { class: "num hide-sm" }, f ? `${f.active_days} Tage (ab ${f.min_days})` : "–"));
     const tds = el("td");
-    tds.append(el("span", { class: "spill" }, f ? f.status : "–"));
+    const sc = !f ? "" : f.status === "aktiv" ? "spill on" : f.status === "zu wenig Daten" ? "spill off" : "spill bad";
+    tds.append(el("span", sc ? { class: sc } : {}, f ? f.status : "–"));
     tr.append(tds);
     tb.append(tr);
   }
@@ -999,7 +1263,7 @@ function renderEffects() {
   trh.append(el("td", { class: "num hide-sm" }, "–"));
   trh.append(el("td", { class: "num hide-sm" }, `${e.n_holiday_days ?? 0} Feiertage in den Daten`));
   const tds = el("td");
-  tds.append(el("span", { class: "spill" }, "aktiv"));
+  tds.append(el("span", { class: "spill on" }, "aktiv"));
   trh.append(tds);
   tb.append(trh);
   t.append(tb);
@@ -1203,29 +1467,37 @@ function bestWeeklyWindows() {
   return picked;
 }
 
-function dayPills(day) {
-  const pills = [];
-  if (day.holiday) pills.push(el("span", { class: "pill" }, day.holiday));
-  if (day.school) pills.push(el("span", { class: "pill", title: day.school }, "Ferien"));
-  if (day.bridge) pills.push(el("span", { class: "pill" }, "Brückentag"));
-  return pills;
-}
 
 function updateBestSummary() {
   const b = state.best;
-  const days = [];
   const wd = b.wd;
-  if (wd.slice(0, 5).every(Boolean)) days.push("Mo–Fr");
-  else if (wd[0] || wd[1] || wd[2] || wd[3] || wd[4]) days.push(WD.filter((_, i) => i < 5 && wd[i]).join("/"));
-  if (wd.slice(5).every(Boolean)) days.push("Sa/So");
-  else if (wd[5] || wd[6]) days.push(WD.filter((_, i) => i >= 5 && wd[i]).join("/"));
-  $("#bestSummary").textContent = `${days.join(", ") || "kein Tag"} ${b.wkFrom}–${b.wkTo} Uhr, Sa/So ${b.weFrom}–${b.weTo} Uhr, ${b.dur} min`;
+  const parts = [];
+  if (!wd.every(Boolean)) {
+    const days = [];
+    if (wd.slice(0, 5).every(Boolean)) days.push("Mo–Fr");
+    else if (wd.slice(0, 5).some(Boolean)) days.push(WD.filter((_, i) => i < 5 && wd[i]).join(", "));
+    if (wd.slice(5).every(Boolean)) days.push("Sa/So");
+    else if (wd[5] || wd[6]) days.push(WD.filter((_, i) => i >= 5 && wd[i]).join(", "));
+    if (days.length) parts.push(days.join(", "));
+  }
+  if (wd.slice(0, 5).some(Boolean)) parts.push(`Mo–Fr ${b.wkFrom}–${b.wkTo} Uhr`);
+  if (wd[5] || wd[6]) parts.push(`Sa/So ${b.weFrom}–${b.weTo} Uhr`);
+  parts.push(`${b.dur} min`);
+  $("#bestSummary").textContent = parts.join(", ");
+}
+
+function dayNote(day) {
+  const parts = [];
+  if (day.holiday) parts.push(day.holiday);
+  if (day.school) parts.push("Schulferien");
+  if (day.bridge) parts.push("Brückentag");
+  return parts.join(", ");
 }
 
 function renderBestCard() {
   const d = state.data, unitS = d.unit === "percent" ? "%" : "Pers.";
-  const nextList = $("#nextList"), weeklyList = $("#weeklyList"), note = $("#weeklyNote"), pf = $("#perfect");
-  nextList.textContent = ""; weeklyList.textContent = ""; note.textContent = ""; pf.textContent = "";
+  const nextTable = $("#nextTable"), weeklyTable = $("#weeklyTable"), note = $("#weeklyNote"), pf = $("#perfect");
+  nextTable.textContent = ""; weeklyTable.textContent = ""; note.textContent = ""; pf.textContent = "";
   updateBestSummary();
 
   // Nächste 7 Tage (Prognose)
@@ -1234,29 +1506,48 @@ function renderBestCard() {
   if (hasFc) {
     const rows = bestForecastWindows(d);
     for (const { day, win } of rows) if (win && (!bestFc || win.avg < bestFc.win.avg)) bestFc = { day, win };
+    const cg = el("colgroup");
+    cg.append(el("col", { class: "c-time" }), el("col", { class: "c-day" }), el("col", { class: "c-num" }), el("col", { class: "c-wx" }), el("col", { class: "c-note" }));
+    nextTable.append(cg);
+    const thead = el("thead"), hr = el("tr");
+    hr.append(el("th", { scope: "col" }, "Zeit"), el("th", { class: "dayh", scope: "col" }, "Tag"), el("th", { class: "num", scope: "col" }, "Leute"), el("th", { scope: "col" }, "Wetter"), el("th", { class: "notec", scope: "col" }, ""));
+    thead.append(hr); nextTable.append(thead);
+    const tbody = el("tbody");
     for (const { day, win } of rows) {
       const isTop = win && bestFc && day.date === bestFc.day.date;
-      const li = el("li", isTop ? { class: "top" } : {});
-      const when = el("span", { class: "when" }, dayLabel(day) + (win ? " · " + fmtTime(win.start) + "–" + fmtTime(win.end) : ""));
-      if (isTop) when.append(el("b", { class: "best-tag" }, "beste"));
-      li.append(when);
+      const tr = el("tr", isTop ? { class: "top" } : {});
+      const t = el("td", { class: "t" }, win ? fmtTime(win.start) + "–" + fmtTime(win.end) : "");
+      if (isTop) t.append(document.createTextNode(" "), el("b", { class: "best-tag" }, "beste"));
+      t.append(el("span", { class: "day2" }, dayLabel(day)));
+      const hints = dayNote(day);
+      if (hints) t.append(el("span", { class: "note2" }, hints));
+      tr.append(t);
+      tr.append(el("td", { class: "dayc" }, dayLabel(day)));
       if (win) {
-        const rgt = el("span", { class: "rgt" });
-        rgt.append(el("b", {}, "~" + nf(win.avg) + " " + unitS), el("span", { class: "mini" }, nf(win.lo) + "–" + nf(win.hi)));
+        const people = el("td", { class: "num" });
+        people.append(el("span", { class: "big" }, "~" + nf(win.avg) + " " + unitS));
+        people.append(el("span", { class: "under" }, nf(win.lo) + "–" + nf(win.hi)));
+        tr.append(people);
+        const wxtd = el("td");
         if (day.weather) {
-          const wx = el("span", { title: wxText(day.weather.code) });
+          const wx = el("span", { class: "wxline", title: wxText(day.weather.code) });
           wx.append(wxIcon(day.weather.code), document.createTextNode(" " + Math.round(day.weather.tmax) + "°"));
-          rgt.append(wx);
+          wxtd.append(wx);
         }
-        dayPills(day).forEach((p) => rgt.append(p));
-        li.append(rgt);
+        tr.append(wxtd);
+        tr.append(el("td", { class: "note notec" }, dayNote(day)));
       } else {
-        li.append(el("span", { class: "muted" }, "kein Fenster in deinem Zeitraum"));
+        const none = el("td", { class: "num nofc", colspan: "3" });
+        none.append(el("span", { class: "note" }, "kein Fenster in deinem Zeitraum"));
+        tr.append(none);
       }
-      nextList.append(li);
+      tbody.append(tr);
     }
+    nextTable.append(tbody);
   } else {
-    nextList.append(el("li", { class: "muted" }, "Noch zu wenig Daten für eine Prognose."));
+    const tb = el("tbody"), tr = el("tr");
+    tr.append(el("td", { class: "note" }, "Noch zu wenig Daten für eine Prognose."));
+    tb.append(tr); nextTable.append(tb);
   }
 
   // Generell (Historie)
@@ -1264,21 +1555,37 @@ function renderBestCard() {
   const picked = state.weekly ? bestWeeklyWindows() : null;
   if (picked && picked.length) {
     gen = picked[0];
+    const cg = el("colgroup");
+    cg.append(el("col", { class: "c-time" }), el("col", { class: "c-day" }), el("col", { class: "c-num" }), el("col", { class: "c-num" }), el("col", { class: "c-wk" }));
+    weeklyTable.append(cg);
+    const thead = el("thead"), hr = el("tr");
+    hr.append(el("th", { scope: "col" }, "Zeit"), el("th", { class: "dayh", scope: "col" }, "Tag"), el("th", { class: "num", scope: "col" }, "typisch"), el("th", { class: "num mhc", scope: "col" }, "meist unter"), el("th", { class: "num wkh", scope: "col" }, "Wochen"));
+    thead.append(hr); weeklyTable.append(thead);
+    const tbody = el("tbody");
     for (const c of picked) {
-      const li = el("li");
-      li.append(el("span", { class: "when" }, WD[c.wd] + " " + fmtMin(c.startMin) + "–" + fmtMin(c.endMin)));
-      const rgt = el("span", { class: "rgt" });
-      rgt.append(el("b", {}, "typisch ~" + nf(c.typ)), el("span", { class: "mini" }, "meist unter " + nf(c.p75)));
-      rgt.append(el("span", { class: "mini" }, c.n + (c.n === 1 ? " Woche" : " Wochen")));
-      if (c.n < 4) rgt.append(el("span", { class: "pill", title: "weniger als 4 Wochen Daten" }, "vorläufig"));
-      li.append(rgt);
-      weeklyList.append(li);
+      const tr = el("tr");
+      const t = el("td", { class: "t" }, fmtMin(c.startMin) + "–" + fmtMin(c.endMin));
+      t.append(el("span", { class: "day2" }, WD_FULL[(c.wd + 1) % 7]));
+      tr.append(t);
+      tr.append(el("td", { class: "dayc" }, WD_FULL[(c.wd + 1) % 7]));
+      const typ = el("td", { class: "num" });
+      typ.append(el("span", { class: "big" }, "~" + nf(c.typ)));
+      typ.append(el("span", { class: "under mu2" }, "meist unter " + nf(c.p75)));
+      tr.append(typ);
+      tr.append(el("td", { class: "num mhc" }, nf(c.p75)));
+      const wktd = el("td", { class: "num wkc" }, c.n + " Wo.");
+      if (c.n < 4) wktd.append(el("span", { class: "under" }, "vorläufig"));
+      tr.append(wktd);
+      tbody.append(tr);
     }
+    weeklyTable.append(tbody);
     note.textContent = "Feiertage und Brückentage sind ausgenommen. „Meist unter“ = in 3 von 4 Wochen.";
     const ex = (state.weekly.excluded || []).slice(0, 4);
     if (ex.length) note.textContent += " Ausgenommen: " + ex.map((e) => Number(e.date.slice(8, 10)) + "." + Number(e.date.slice(5, 7)) + ". (" + e.reason + ")").join(", ") + ".";
   } else {
-    weeklyList.append(el("li", { class: "muted" }, "Noch keine abgeschlossenen Tage für diese Auswahl."));
+    const tb = el("tbody"), tr = el("tr");
+    tr.append(el("td", { class: "note" }, "Noch keine abgeschlossenen Tage für diese Auswahl."));
+    tb.append(tr); weeklyTable.append(tb);
   }
 
   // Am besten
@@ -1305,7 +1612,7 @@ function renderBestCard() {
 
 function renderAll() {
   if (!state.data) return;
-  renderLead(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
+  renderLead(); renderBand(); renderForecast(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1358,13 +1665,24 @@ async function refresh(full = true) {
   if (!has) return;
   const sel = $("#gymSel");
   const names = state.gyms.map((g) => g.gym);
-  if (sel.options.length !== names.length || [...sel.options].some((o, i) => o.value !== names[i])) {
+  const isQuick = QUICK.some((q) => q.gym === state.gym);
+  const opts = isQuick ? ["", ...names] : names;
+  const rebuild = sel.options.length !== opts.length || [...sel.options].some((o, i) => o.value !== opts[i]);
+  if (rebuild) {
     sel.textContent = "";
+    if (isQuick) sel.append(el("option", { value: "" }, "Andere …"));
     for (const n of names) sel.append(el("option", { value: n }, n));
   }
   if (!state.gym) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
   else if (!names.includes(state.gym)) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
-  sel.value = state.gym;
+  if (isQuick) {
+    if (!rebuild && sel.options.length && sel.options[0].value !== "") {
+      sel.prepend(el("option", { value: "" }, "Andere …"));
+    }
+    sel.value = "";
+  } else {
+    sel.value = state.gym;
+  }
   renderQuickChips();
   if (full) await loadGym(); else renderOverview();
 }
@@ -1379,13 +1697,11 @@ function renderQuickChips() {
     b.addEventListener("click", () => selectGym(q.gym));
     host.append(b);
   }
-  const other = state.gyms.find((g) => g.gym === state.gym);
-  const selEl = $("#gymSel");
-  selEl.classList.toggle("hidden", !other || QUICK.some((q) => q.gym === state.gym));
 }
 
 function selectGym(name) {
-  state.gym = name; $("#gymSel").value = name;
+  if (!name) return;
+  state.gym = name; state.bandDay = null;
   renderQuickChips();
   loadGym();
 }
@@ -1395,7 +1711,7 @@ function setPressed(seg, attr, value) {
 }
 
 function initControls() {
-  $("#gymSel").addEventListener("change", (e) => selectGym(e.target.value));
+  $("#gymSel").addEventListener("change", (e) => { const v = e.target.value; if (v) selectGym(v); });
   const rs = $("#rangeSeg"), hs = $("#horizonSeg");
   setPressed(rs, "days", state.days); setPressed(hs, "h", state.horizon);
   rs.addEventListener("click", (e) => {
@@ -1445,7 +1761,7 @@ function initControls() {
     refresh();
   });
   let rt;
-  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderDays(); renderHistory(); } }, 120); }).observe($("#app"));
+  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderBand(); renderHistory(); } }, 120); }).observe($("#app"));
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
 }
 

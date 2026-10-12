@@ -66,11 +66,11 @@ class ExportSiteTestCase(unittest.TestCase):
         self.assertEqual((self.out / ".nojekyll").read_text(encoding="utf-8"), "")
 
         # Schriften mitgeliefert, index.html laedt sie lokal statt von Google Fonts
-        self.assertTrue((self.out / "fonts" / "big-shoulders-display.woff2").is_file())
-        self.assertTrue((self.out / "fonts" / "OFL-GeistMono.txt").is_file())
+        self.assertTrue((self.out / "fonts" / "archivo.woff2").is_file())
+        self.assertTrue((self.out / "fonts" / "OFL-Archivo.txt").is_file())
         self.assertFalse((self.out / "fonts" / "alt.woff2").exists())
         self.assertNotIn("fonts.googleapis.com", html)
-        self.assertIn("fonts/geist-mono.woff2", html)
+        self.assertIn("fonts/archivo.woff2", html)
 
         def load(p):
             return json.loads((self.out / p).read_text(encoding="utf-8"))
