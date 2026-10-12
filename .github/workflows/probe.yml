@@ -1,0 +1,51 @@
+# Prueft per Hand (workflow_dispatch), ob die Datenquellen des
+# EVO-Visits-Trackers von GitHub-Runnern aus erreichbar sind:
+# EVO-Visits-API, Open-Meteo und OpenHolidaysAPI.
+
+name: probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Erreichbarkeit
+        shell: bash
+        run: |
+          set -u
+          for URL in \
+            "https://visits.evofitness.de/" \
+            "https://visits.evofitness.de/api/v1/locations?operator=c04bc7c3-903f-4804-a952-9abc0016b824" \
+            "https://api.open-meteo.com/v1/forecast?latitude=51.227&longitude=6.773&hourly=temperature_2m&forecast_days=1&timeformat=unixtime&timezone=UTC" \
+            "https://openholidaysapi.org/SchoolHolidays?countryIsoCode=DE&subdivisionCode=DE-NW&languageIsoCode=DE&validFrom=2026-01-01&validTo=2026-12-31"
+          do
+            printf '%s %s\n' "$(curl -sS -o /dev/null -w '%{http_code} %{time_total}s' --max-time 20 "$URL" 2>&1)" "$URL"
+          done
+          echo "Runner-IP:"
+          curl -sS --max-time 10 https://api.ipify.org
+
+      - name: Probe
+        run: python3 evo_visits.py probe --mode api
+
+      - name: Summary ausgeben
+        if: always()
+        run: cat data/probe/*/summary.txt
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: probe
+          path: data/probe
+          retention-days: 7
