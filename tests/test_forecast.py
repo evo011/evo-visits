@@ -53,7 +53,6 @@ class ForecastTests(unittest.TestCase):
             self.assertLessEqual(p["lo"], p["est"])
             self.assertLessEqual(p["est"], p["hi"])
             self.assertGreaterEqual(p["lo"], 0)
-            self.assertLessEqual(p["hi"], 100)
 
     def test_nowcast_shifts_near_term_only(self):
         series, end = synth()

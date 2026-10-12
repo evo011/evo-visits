@@ -245,6 +245,11 @@ def fit_effects(rows: list, profile_fn: Callable[[date, int], Optional[float]],
     vecs = [day_xty[d] for d in days]
     n_days = len(days)
     cols = [[] for _ in range(k)]
+    if n_boot < 2:
+        # Ohne Bootstrap gibt es keine Streuung: CI auf den Punktschaetzer, Kovarianz 0.
+        for a, f in enumerate(feats):
+            fit.ci[f] = (fit.beta[f], fit.beta[f])
+        return fit
     for _ in range(n_boot):
         B = [[0.0] * k for _ in range(k)]
         brhs = [0.0] * k
