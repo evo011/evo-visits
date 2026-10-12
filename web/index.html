@@ -5,111 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>EVO Auslastung</title>
-<meta name="theme-color" content="#0b0d0e" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#eceee9" media="(prefers-color-scheme: light)">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b0d0e'/%3E%3Crect x='10' y='36' width='8' height='18' fill='%2319c3b9'/%3E%3Crect x='22' y='24' width='8' height='30' fill='%2319c3b9'/%3E%3Crect x='34' y='10' width='8' height='44' fill='%23c8ff3d'/%3E%3Crect x='46' y='28' width='8' height='26' fill='%2319c3b9'/%3E%3C/svg%3E">
-<link rel="preload" href="fonts/big-shoulders-display.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="theme-color" content="#151617" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317181a'/%3E%3Crect x='8.5' y='50' width='4' height='14' fill='%23f4f4f1'/%3E%3Crect x='15.5' y='42' width='4' height='22' fill='%23f4f4f1'/%3E%3Crect x='22.5' y='34' width='4' height='30' fill='%23f4f4f1'/%3E%3Crect x='29.5' y='26' width='4' height='38' fill='%23f4f4f1'/%3E%3Crect x='36.5' y='38' width='4' height='26' fill='%23f4f4f1'/%3E%3Crect x='43.5' y='46' width='4' height='18' fill='%23f4f4f1'/%3E%3Crect x='50.5' y='54' width='4' height='10' fill='%232d8a4a'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face {
-  font-family: "Big Shoulders Display";
+  font-family: "Archivo";
   font-style: normal;
-  font-weight: 600 800;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
   font-display: swap;
-  src: url("fonts/big-shoulders-display.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Geist Mono";
-  font-style: normal;
-  font-weight: 400 500;
-  font-display: swap;
-  src: url("fonts/geist-mono.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: "Instrument Sans";
-  font-style: normal;
-  font-weight: 400 600;
-  font-display: swap;
-  src: url("fonts/instrument-sans.woff2") format("woff2");
+  src: url("fonts/archivo.woff2") format("woff2");
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 :root {
-  color-scheme: dark;
-  --page: #0b0d0e;
-  --surface-1: #121618;
-  --surface-2: #1a2124;
-  --text-primary: #eef2f1;
-  --text-secondary: #a7b2b0;
-  --text-muted: #6c7876;
-  --grid: #1f2729;
-  --axis: #2f3a3d;
-  --border: rgba(238,242,241,.08);
-  --accent: #19c3b9;
-  --signal: #c8ff3d;
-  --hot: #ff5a3c;
-  --on-accent: #041716;
-  --series-1: #19c3b9;
-  --series-2: #ffb347;
-  --reference: #6c7876;
-  --critical: #ff5a3c;
-  --good: #19c3b9;
-  --focus: #19c3b9;
-  --heat-0: #11201f;
-  --heat-1: #19c3b9;
-  --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
-  --font-body: "Instrument Sans", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  color-scheme: light;
+  --chalk: #f4f4f1;
+  --chalk-2: #e9e9e4;
+  --ink: #17181a;
+  --ink-2: #45484d;
+  --ink-3: #6b6f75;
+  --steel: #cfd1d2;
+  --plate-green: #2d8a4a;
+  --plate-red: #cc3524;
+  --page: var(--chalk);
+  --surface-1: var(--chalk);
+  --surface-2: var(--chalk-2);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted: var(--ink-3);
+  --grid: var(--steel);
+  --axis: var(--steel);
+  --border: var(--steel);
+  --accent: var(--plate-green);
+  --signal: var(--plate-green);
+  --hot: var(--plate-red);
+  --on-accent: var(--chalk);
+  --series-1: var(--ink);
+  --series-2: var(--ink-2);
+  --reference: var(--ink-3);
+  --critical: var(--plate-red);
+  --good: var(--plate-green);
+  --focus: var(--ink);
+  --heat-0: var(--chalk-2);
+  --heat-1: var(--ink);
+  --font: "Archivo", system-ui, sans-serif;
+  --font-display: var(--font);
+  --font-body: var(--font);
+  --font-mono: var(--font);
 }
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    color-scheme: light;
-    --page: #eceee9;
-    --surface-1: #fbfbf8;
-    --surface-2: #e4e7e2;
-    --text-primary: #0c1112;
-    --text-secondary: #44504e;
-    --text-muted: #79837f;
-    --grid: #dde1db;
-    --axis: #c3c9c2;
-    --border: rgba(12,17,18,.10);
-    --accent: #00968d;
-    --signal: #4d7c0f;
-    --hot: #d2381e;
-    --on-accent: #ffffff;
-    --series-1: #00968d;
-    --series-2: #d97706;
-    --reference: #79837f;
-    --critical: #d2381e;
-    --good: #00968d;
-    --focus: #00968d;
-    --heat-0: #d7efec;
-    --heat-1: #00635d;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --chalk: #151617;
+    --chalk-2: #1f2022;
+    --ink: #edece7;
+    --ink-2: #b5b6b2;
+    --ink-3: #8f918d;
+    --steel: #34363a;
+    --plate-green: #55b574;
+    --plate-red: #ee5a46;
   }
 }
-:root[data-theme="light"] {
-  color-scheme: light;
-  --page: #eceee9;
-  --surface-1: #fbfbf8;
-  --surface-2: #e4e7e2;
-  --text-primary: #0c1112;
-  --text-secondary: #44504e;
-  --text-muted: #79837f;
-  --grid: #dde1db;
-  --axis: #c3c9c2;
-  --border: rgba(12,17,18,.10);
-  --accent: #00968d;
-  --signal: #4d7c0f;
-  --hot: #d2381e;
-  --on-accent: #ffffff;
-  --series-1: #00968d;
-  --series-2: #d97706;
-  --reference: #79837f;
-  --critical: #d2381e;
-  --good: #00968d;
-  --focus: #00968d;
-  --heat-0: #d7efec;
-  --heat-1: #00635d;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --chalk: #151617;
+  --chalk-2: #1f2022;
+  --ink: #edece7;
+  --ink-2: #b5b6b2;
+  --ink-3: #8f918d;
+  --steel: #34363a;
+  --plate-green: #55b574;
+  --plate-red: #ee5a46;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -119,127 +87,93 @@ button, a, [role="button"], .chip { touch-action: manipulation; }
 button, .chip, .seg button { user-select: none; -webkit-user-select: none; }
 body {
   background-color: var(--page);
-  background-image: radial-gradient(60vw 40vh at 0% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent);
   color: var(--text-primary);
-  font: 15px/1.45 var(--font-body);
-  position: relative;
+  font: 15px/1.5 var(--font);
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--ink);
   min-height: 100vh;
 }
-body::before {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: .35;
-  background:
-    repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 48px),
-    repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 48px);
+::selection { background: color-mix(in srgb, var(--plate-green) 28%, transparent); }
+html { scrollbar-color: var(--steel) transparent; }
+a { text-underline-offset: 3px; }
+main { max-width: 880px; margin: 0 auto; padding: 20px 20px calc(48px + env(safe-area-inset-bottom, 0px)); }
+header {
+  position: sticky; top: 0; z-index: 20; background: var(--chalk);
+  border-bottom: 1px solid var(--steel);
+  padding: 12px 20px calc(10px + env(safe-area-inset-top, 0px));
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
 }
-body::after {
-  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: .04;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-main { max-width: 1120px; margin: 0 auto; padding: 20px 16px calc(48px + env(safe-area-inset-bottom, 0px)); }
-header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 14px; padding-top: env(safe-area-inset-top, 0px); }
-.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.hd-row { display: flex; align-items: center; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
 .brand svg { flex: 0 0 auto; }
-.wordmark { font-family: var(--font-display); text-transform: uppercase; line-height: 1; }
-.wordmark .wm-top { display: block; font-size: 13px; font-weight: 800; letter-spacing: .14em; color: var(--accent); }
-.wordmark .wm-main { display: block; font-size: 28px; font-weight: 800; letter-spacing: .03em; }
-h2 { font-family: var(--font-display); font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; margin: 0 0 2px; }
+.wordmark { font-size: 15px; font-weight: 650; line-height: 1; }
+.hd-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+#stand { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
+#stand.err { color: var(--plate-red); }
+.hd-right a { color: var(--ink-2); font-size: 13px; text-decoration: underline; }
+#clubbar { display: flex; gap: 0; margin-top: 10px; }
+#clubbar .seg { flex: 1; }
+#gymSel { max-width: 40%; }
+h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 2px; }
 .sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 12px; }
-.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); }
-.status { color: var(--text-secondary); font-size: 12px; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; background: color-mix(in srgb, var(--surface-1) 92%, transparent); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--text-muted); }
-.dot.ok { background: var(--good); }
-.dot.ok.pulse { animation: pulse 2.4s ease-in-out infinite; }
-.dot.err { background: var(--critical); }
-@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--good) 45%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--good) 0%, transparent); } }
-.spacer { flex: 1; }
-#quickbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
-#quickbar .chip { height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--border); background: color-mix(in srgb, var(--surface-1) 92%, transparent); font-family: var(--font-display); font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-#quickbar .chip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-#quickbar .gym-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); margin-left: auto; }
-.chip, #quickbar .chip { transition: background .15s, transform .15s; }
-.chip:active { transform: scale(.97); }
-@media (max-width: 700px) {
-  header .brand { order: 1; }
-  header .spacer { order: 2; }
-  header #collectBtn { order: 3; }
-  header > .btn { order: 4; }
-  header .status { order: 5; flex: 1 0 100%; flex-wrap: nowrap; white-space: nowrap; }
-  header .status .dot { flex: 0 0 auto; }
-  header .status span:not(.dot) { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
-  #quickbar { position: sticky; top: 0; z-index: 10; background: var(--page); border-bottom: 1px solid var(--border); padding: 8px 16px; padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); margin: 0 -16px 12px; flex-wrap: nowrap; }
-  #quickbar .gym-pick { flex: 1; min-width: 0; margin-left: auto; }
-  #quickbar .gym-pick .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-  #gymSel { width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-}
-@media (max-width: 560px) {
-  #quickbar { padding: 8px 12px; padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); margin: 0 -12px 12px; }
-}
+h3 { font-size: 15px; font-weight: 650; margin: 14px 0 4px; color: var(--ink); }
+section { margin-bottom: 40px; }
+section h2 { border-top: 1px solid var(--steel); padding-top: 20px; }
+section:first-of-type h2, #lead { border-top: 0; padding-top: 0; }
+#lead { margin: 24px 0 40px; }
+#lead .l1 { font-size: 32px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); margin: 0; }
+#lead .l1 b { font-weight: 800; font-stretch: 87.5%; }
+#lead .l2 { font-size: 18px; font-weight: 450; color: var(--ink-2); margin: 6px 0 0; line-height: 1.4; }
+#lead .l3 { font-size: 15px; color: var(--ink-2); margin: 10px 0 0; }
+#lead .l3 b { color: var(--plate-green); font-weight: 650; }
+#lead .l4 { font-size: 13px; color: var(--ink-3); margin: 8px 0 0; }
+.g { color: var(--plate-green); }
+.r { color: var(--plate-red); }
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 560px) { #lead .l1 { font-size: 26px; } }
 button, select, .btn {
-  font: inherit; font-size: 14px; color: var(--text-primary); background: var(--surface-1);
-  border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; min-height: 40px; cursor: pointer;
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: var(--chalk-2);
+  border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; cursor: pointer;
   text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease;
 }
-button:focus-visible, select:focus-visible, .btn:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button:active, select:active, .btn:active, .seg button:active, .chip:active { transform: scale(0.97); }
+button:focus-visible, select:focus-visible, .btn:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 button:disabled { opacity: .6; cursor: progress; }
-.banner { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+select { appearance: none; }
+.banner { background: var(--chalk-2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
 .banner strong { font-weight: 650; }
 .filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 16px; max-width: 100%; }
-.filters label { font-size: 13px; color: var(--text-secondary); display: inline-flex; gap: 8px; align-items: center; }
-.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; background: var(--surface-1); max-width: 100%; }
+.filters label { font-size: 13px; font-weight: 500; color: var(--ink-2); display: inline-flex; gap: 8px; align-items: center; }
+.seg { display: inline-flex; border-radius: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; gap: 4px; max-width: 100%; }
 .seg::-webkit-scrollbar { display: none; }
-.seg button { border: 0; border-radius: 0; padding: 9px 12px; min-height: 38px; background: transparent; white-space: nowrap; }
-.seg button + button { border-left: 1px solid var(--border); }
-.seg button[aria-pressed="true"] { background: var(--surface-2); font-weight: 600; }
-.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.tile, .card {
-  position: relative; background: color-mix(in srgb, var(--surface-1) 92%, transparent);
-  border: 1px solid var(--border); border-radius: 6px; padding: 18px;
-}
-.tile::before, .card::before { content: ""; position: absolute; top: -1px; left: 16px; width: 48px; height: 2px; background: var(--accent); }
-.tile .label { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); }
-.tile .value { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.15; margin-top: 2px; }
-.tile.hero { grid-column: 1 / -1; padding-top: 20px; }
-.tile.hero .value { font-size: clamp(88px, 22vw, 168px); font-weight: 800; line-height: .85; }
-.tile.hero .value small { font-size: clamp(16px, 3vw, 22px); font-weight: 600; color: var(--text-secondary); margin-left: 10px; }
-.tile .value small { font-size: 15px; font-weight: 500; color: var(--text-secondary); margin-left: 4px; }
-.tile .note { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-.hero-flex { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 28px; }
-.hero-status { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 8vw, 56px); text-transform: uppercase; letter-spacing: .03em; line-height: 1; padding-bottom: 6px; }
-.pulsebar { position: relative; height: 10px; background: var(--surface-2); margin-top: 14px; overflow: visible; }
-.pulsebar .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); }
-.pulsebar .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text-primary); }
-.pulsebar .marklabel { position: absolute; bottom: calc(100% + 3px); transform: translateX(-50%); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); font-family: var(--font-body); }
-.compact-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.compact-row .tile .value { font-size: 26px; }
-.compact-row .tile .note { font-size: 11px; max-height: 4.35em; overflow: hidden; }
-.meter { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 10px; overflow: hidden; }
-.meter > span { display: block; height: 100%; background: var(--series-1); border-radius: 3px; }
+.seg button { border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; background: var(--chalk-2); color: var(--ink); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--chalk); }
+#clubbar .seg { border-radius: 8px; }
 #bestCard .cols { display: grid; grid-template-columns: 1fr; gap: 0 28px; }
 @media (min-width: 900px) { #bestCard .cols { grid-template-columns: 1fr 1fr; } }
-#bestCard h3 { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); margin: 12px 0 0; }
-.perfect {
-  margin: 14px 0 16px; padding: 14px 16px;
-  background: color-mix(in srgb, var(--signal) 14%, var(--surface-1));
-  border-left: 4px solid var(--signal); border-radius: 4px;
-}
-.perfect .eyebrow { display: block; }
-.perfect .big { font-family: var(--font-display); font-size: 34px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; line-height: 1.1; display: block; margin-top: 4px; }
-@media (max-width: 560px) { .perfect .big { font-size: 28px; } }
-.perfect .side { display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-secondary); margin-top: 6px; flex-wrap: wrap; }
-.perfect .mini { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
 #bestCard .best li { flex-wrap: wrap; row-gap: 4px; }
-#bestCard .best li.top { box-shadow: inset 3px 0 0 var(--signal); padding-left: 8px; }
-#bestCard .best li.top b { font-weight: 800; }
-#bestCard .best .when, .best .when { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
-#bestCard .rgt { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
-#bestCard .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
+#bestCard .best li.top b.best-tag { color: var(--plate-green); font-weight: 650; }
+.best .when, .rgt, td.num, th.num, .tick { font-variant-numeric: tabular-nums; font-stretch: 87.5%; }
+.best .when { font-size: 13px; }
+#bestCard .rgt { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+#bestCard .pill { background: var(--chalk-2); border-radius: 8px; padding: 1px 7px; font-size: 11px; line-height: 1.5; white-space: nowrap; }
 #bestCard .when .pill { margin-left: 6px; }
-#bestCard .seg button, #bestDur button { min-height: 40px; border-radius: 0; }
-.card { margin-bottom: 12px; }
+#bestCard .seg button, #bestDur button { min-height: 40px; }
+.perfectline { font-size: 18px; font-weight: 650; color: var(--ink); margin: 14px 0 16px; }
+.perfectline .t { color: var(--plate-green); }
+.perfectline .mini { font-size: 13px; font-weight: 450; }
+details { margin-top: 8px; font-size: 13px; }
+details summary { cursor: pointer; color: var(--ink-2); }
+details summary:hover { color: var(--ink); }
+details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
+section { margin-bottom: 40px; }
+@media (max-width: 560px) { section { margin-bottom: 32px; } }
+.ic { width: 16px; height: 16px; fill: currentColor; vertical-align: -2px; }
 .chart { position: relative; width: 100%; height: 300px; transition: opacity .2s; }
 @media (max-width: 560px) { .chart { height: 220px; } }
 .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.loading .chart, .loading .heat, .loading .tiles { opacity: .55; }
+.loading .chart, .loading .heat { opacity: .55; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin: 2px 0 6px; }
 .key { display: inline-flex; align-items: center; gap: 6px; }
 .key i { display: inline-block; width: 16px; height: 0; border-top: 2px solid; }
@@ -249,7 +183,7 @@ button:disabled { opacity: .6; cursor: progress; }
 .endlabel { fill: var(--text-primary); font-size: 16px; font-weight: 600; font-family: var(--font-display); }
 .nowlabel { fill: var(--text-muted); font-size: 11px; }
 .tooltip {
-  position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  position: absolute; pointer-events: none; background: var(--chalk); border: 1px solid var(--steel);
   border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.12);
   min-width: 140px; z-index: 5; display: none; white-space: nowrap;
 }
@@ -260,87 +194,99 @@ button:disabled { opacity: .6; cursor: progress; }
 .tooltip .row i { display: inline-block; width: 12px; border-top: 2px solid; }
 .heat { display: grid; grid-template-columns: 26px repeat(17, 1fr); gap: 2px; font-size: 11px; color: var(--text-muted); }
 .heat .cell { height: 22px; border-radius: 2px; background: var(--surface-2); }
-.heat .cell:focus-visible { outline: 2px solid var(--text-primary); outline-offset: -1px; }
+.heat .cell:focus-visible { outline: 2px solid var(--ink); outline-offset: -1px; }
 .heat .rl { display: flex; align-items: center; }
 .heat .cl { text-align: center; font-variant-numeric: tabular-nums; }
 .scale { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-top: 8px; }
 .scale .bar { flex: 0 0 120px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--heat-0), var(--heat-1)); }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--grid); }
-th { font-weight: 500; color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 0; }
+thead tr { border-bottom: 1px solid var(--steel); }
+th { font-weight: 500; color: var(--ink-2); font-size: 13px; }
+td.num, th.num { text-align: right; }
 td.nw { white-space: nowrap; }
-tbody tr.sel td { background: var(--surface-2); }
+tbody tr.sel td { background: var(--chalk-2); }
 #overview tbody tr { cursor: pointer; }.muted { color: var(--text-muted); }
-details { margin-top: 8px; font-size: 13px; }
-details summary { cursor: pointer; color: var(--text-secondary); }
-details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
 .best { list-style: none; padding: 0; margin: 8px 0 0; }
-.best li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--grid); }
+.best li { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--steel); }
 .best li b { font-weight: 600; }
 .best .when { color: var(--text-secondary); }
 .inline-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--text-secondary); }
-.inline-controls select { padding: 3px 6px; font-size: 13px; }
+.inline-controls select { padding: 0 6px; font-size: 13px; min-height: 32px; }
 .empty { text-align: center; padding: 48px 16px; color: var(--text-secondary); }
-.empty code, .banner code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+.empty code, .banner code { background: var(--chalk-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 .err { color: var(--critical); }
 .hidden { display: none !important; }
 .tooltip.wide { white-space: normal; max-width: 240px; }
 .tooltip .extra { font-size: 11px; color: var(--text-secondary); margin-top: 2px; white-space: pre-line; }
 .dayswrap { margin-top: 10px; }
 .days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(84px, 1fr); gap: 6px; overflow-x: auto; padding-bottom: 2px; }
-.day { background: color-mix(in srgb, var(--surface-1) 92%, transparent); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
-.day .dh { font-family: var(--font-display); font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-.day .wx { white-space: nowrap; }
+.day { background: var(--chalk-2); border-radius: 8px; padding: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.day .dh { font-size: 15px; font-weight: 650; }
+.day .wx { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .day .pr { color: var(--text-secondary); }
 .day .pills { display: flex; flex-wrap: wrap; gap: 4px; }
-.day .pill { background: var(--surface-2); border-radius: 999px; padding: 1px 7px; font-size: 11px; line-height: 1.5; }
+.day .pill { background: var(--chalk); border-radius: 8px; padding: 1px 7px; font-size: 11px; line-height: 1.5; }
 .day .pill.hl { border: 1px solid var(--hot); }
 .day .pill.school { border: 1px solid var(--accent); }
 .day .de { color: var(--text-secondary); margin-top: auto; }
 .day .de span { white-space: nowrap; }
 .wxnote { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
-#effectsCard h3 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 14px 0 4px; }
 #effectsCard .fx-line { font-size: 13px; margin: 0 0 4px; }
 .mini { font-size: 12px; color: var(--text-muted); }
-.spill { display: inline-block; background: var(--surface-2); border-radius: 999px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
+.spill { display: inline-block; background: var(--chalk-2); border-radius: 8px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
 .src { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); margin: 3px 0; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: 0 0 auto; background: var(--ink-3); }
+.dot.ok { background: var(--plate-green); }
+.dot.err { background: var(--plate-red); }
+footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel); padding-top: 20px; margin-bottom: 40px; }
 @media (max-width: 560px) { .hide-sm { display: none; } th, td { padding: 7px 5px; } }
 .tablewrap { overflow-x: auto; }
-.reveal { animation: rise 420ms ease-out both; animation-delay: calc(var(--i, 0) * 60ms); }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
 @media (max-width: 560px) {
-  main { padding: 12px; }
-  main .tiles, main .filters, main .compact-row { gap: 10px; }
-  .card, .tile { padding: 14px; }
-  .wordmark .wm-main { font-size: 24px; }
-  .btn { min-height: 36px; padding: 6px 10px; font-size: 13px; }
+  main { padding: 16px; }
+  header { padding-left: 16px; padding-right: 16px; }
 }
 @media (hover: hover) and (pointer: fine) {
-  button:hover, .btn:hover, select:hover { background: var(--surface-2); }
-  .heat .cell:hover { outline: 2px solid var(--text-primary); outline-offset: -1px; }
-  #overview tbody tr:hover td { background: var(--surface-2); }
+  button:hover, .btn:hover, select:hover { background: color-mix(in srgb, var(--ink) 8%, var(--chalk-2)); }
+  .seg button:hover { background: color-mix(in srgb, var(--ink) 10%, var(--chalk-2)); }
+  .heat .cell:hover { outline: 2px solid var(--ink); outline-offset: -1px; }
+  #overview tbody tr:hover td { background: var(--chalk-2); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .reveal { animation: none; }
-  .dot.ok.pulse { animation: none; }
-  .chip, #quickbar .chip { transition: none; }
-  .chip:active { transform: none; }
+  button, select, .btn, .seg button, .chip { transition: none; }
+  button:active, select:active, .btn:active, .seg button:active, .chip:active { transform: none; }
   .chart { transition: none; }
 }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 256 256"><path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z"/></symbol>
+  <symbol id="i-cloud-sun" viewBox="0 0 256 256"><path d="M164,72a76.2,76.2,0,0,0-20.26,2.73,55.63,55.63,0,0,0-9.41-11.54l9.51-13.57a8,8,0,1,0-13.11-9.18L121.22,54A55.9,55.9,0,0,0,96,48c-.58,0-1.16,0-1.74,0L91.37,31.71a8,8,0,1,0-15.75,2.77L78.5,50.82A56.1,56.1,0,0,0,55.23,65.67L41.61,56.14a8,8,0,1,0-9.17,13.11L46,78.77A55.55,55.55,0,0,0,40,104c0,.57,0,1.15,0,1.72L23.71,108.6a8,8,0,0,0,1.38,15.88,8.24,8.24,0,0,0,1.39-.12l16.32-2.88a55.74,55.74,0,0,0,5.86,12.42A52,52,0,0,0,84,224h80a76,76,0,0,0,0-152ZM56,104a40,40,0,0,1,72.54-23.24,76.26,76.26,0,0,0-35.62,40,52.14,52.14,0,0,0-31,4.17A40,40,0,0,1,56,104ZM164,208H84a36,36,0,1,1,4.78-71.69c-.37,2.37-.63,4.79-.77,7.23a8,8,0,0,0,16,.92,58.91,58.91,0,0,1,1.88-11.81c0-.16.09-.32.12-.48A60.06,60.06,0,1,1,164,208Z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 256 256"><path d="M160,40A88.09,88.09,0,0,0,81.29,88.67,64,64,0,1,0,72,216h88a88,88,0,0,0,0-176Zm0,160H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.29.11A88,88,0,0,0,72,128a8,8,0,0,0,16,0,72,72,0,1,1,72,72Z"/></symbol>
+  <symbol id="i-cloud-rain" viewBox="0 0 256 256"><path d="M158.66,196.44l-32,48a8,8,0,1,1-13.32-8.88l32-48a8,8,0,0,1,13.32,8.88ZM232,92a76.08,76.08,0,0,1-76,76H132.28l-29.62,44.44a8,8,0,1,1-13.32-8.88L113.05,168H76A52,52,0,0,1,76,64a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,92Zm-16,0A60.06,60.06,0,0,0,96,88.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,80a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,92Z"/></symbol>
+  <symbol id="i-cloud-snow" viewBox="0 0 256 256"><path d="M88,196a12,12,0,1,1-12-12A12,12,0,0,1,88,196Zm28,4a12,12,0,1,0,12,12A12,12,0,0,0,116,200Zm48-16a12,12,0,1,0,12,12A12,12,0,0,0,164,184ZM68,224a12,12,0,1,0,12,12A12,12,0,0,0,68,224Zm88,0a12,12,0,1,0,12,12A12,12,0,0,0,156,224ZM232,92a76.08,76.08,0,0,1-76,76H76A52,52,0,0,1,76,64a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,92Zm-16,0A60.06,60.06,0,0,0,96,88.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,80a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,92Z"/></symbol>
+  <symbol id="i-cloud-lightning" viewBox="0 0 256 256"><path d="M156,16A76.2,76.2,0,0,0,84.92,64.76,53.26,53.26,0,0,0,76,64a52,52,0,0,0,0,104h37.87L97.14,195.88A8,8,0,0,0,104,208h25.87l-16.73,27.88a8,8,0,0,0,13.72,8.24l24-40A8,8,0,0,0,144,192H118.13l14.4-24H156a76,76,0,0,0,0-152Zm0,136H76a36,36,0,0,1,0-72,38.11,38.11,0,0,1,4.78.31q-.56,3.57-.77,7.23a8,8,0,0,0,16,.92A60.06,60.06,0,1,1,156,152Z"/></symbol>
+  <symbol id="i-cloud-fog" viewBox="0 0 256 256"><path d="M120,208H72a8,8,0,0,1,0-16h48a8,8,0,0,1,0,16Zm64-16H160a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Zm-24,32H104a8,8,0,0,0,0,16h56a8,8,0,0,0,0-16Zm72-124a76.08,76.08,0,0,1-76,76H76A52,52,0,0,1,76,72a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,100Zm-16,0A60.06,60.06,0,0,0,96,96.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,88a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,100Z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 256 256"><path d="M174,47.75a254.19,254.19,0,0,0-41.45-38.3,8,8,0,0,0-9.18,0A254.19,254.19,0,0,0,82,47.75C54.51,79.32,40,112.6,40,144a88,88,0,0,0,176,0C216,112.6,201.49,79.32,174,47.75ZM128,216a72.08,72.08,0,0,1-72-72c0-57.23,55.47-105,72-118,16.53,13,72,60.75,72,118A72.08,72.08,0,0,1,128,216Zm55.89-62.66a57.6,57.6,0,0,1-46.56,46.55A8.75,8.75,0,0,1,136,200a8,8,0,0,1-1.32-15.89c16.57-2.79,30.63-16.85,33.44-33.45a8,8,0,0,1,15.78,2.68Z"/></symbol>
+</svg>
 <main id="app">
   <header>
-    <span class="brand">
-      <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#0b0d0e"/><rect x="10" y="36" width="8" height="18" fill="#19c3b9"/><rect x="22" y="24" width="8" height="30" fill="#19c3b9"/><rect x="34" y="10" width="8" height="44" fill="#c8ff3d"/><rect x="46" y="28" width="8" height="26" fill="#19c3b9"/></svg>
-      <span class="wordmark"><span class="wm-top">EVO</span><span class="wm-main">Auslastung</span></span>
-    </span>
-    <div class="spacer"></div>
-    <div class="status" id="status"><span class="dot"></span><span>lade …</span></div>
-    <button id="collectBtn" type="button" title="Sofort einen Abruf starten">Jetzt abrufen</button>
-    <a class="btn" href="/api/export.csv" download>CSV</a>
+    <div class="hd-row">
+      <span class="brand">
+        <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" fill="#17181a"/><rect x="8.5" y="50" width="4" height="14" fill="#f4f4f1"/><rect x="15.5" y="42" width="4" height="22" fill="#f4f4f1"/><rect x="22.5" y="34" width="4" height="30" fill="#f4f4f1"/><rect x="29.5" y="26" width="4" height="38" fill="#f4f4f1"/><rect x="36.5" y="38" width="4" height="26" fill="#f4f4f1"/><rect x="43.5" y="46" width="4" height="18" fill="#f4f4f1"/><rect x="50.5" y="54" width="4" height="10" fill="#2d8a4a"/></svg>
+        <span class="wordmark">EVO Auslastung</span>
+      </span>
+      <div class="hd-right">
+        <span id="stand"></span>
+        <a id="collectBtn" href="#" title="Sofort einen Abruf starten">Jetzt abrufen</a>
+        <a href="/api/export.csv" download>CSV</a>
+      </div>
+    </div>
+    <div id="clubbar">
+      <span class="seg" id="quickChips"></span>
+      <label class="vh" for="gymSel">Anderer Club</label><select id="gymSel"></select>
+    </div>
   </header>
 
   <div id="demoBanner" class="banner hidden"><strong>Demo-Daten.</strong> Synthetische Werte zum Ausprobieren der Oberfläche, keine echten EVO-Zahlen. Für echte Daten <code>python3 evo_visits.py serve</code> starten.</div>
@@ -353,44 +299,29 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
   </section>
 
   <section id="content" class="hidden">
-    <div id="quickbar">
-      <span id="quickChips" style="display:contents"></span>
-      <label class="gym-pick"><span class="vh">Alle Clubs</span> <select id="gymSel"></select></label>
-    </div>
-    <div class="filters" role="group" aria-label="Filter">
-      <label>Verlauf
-        <span class="seg" id="rangeSeg">
-          <button type="button" data-days="1">Heute</button>
-          <button type="button" data-days="7">7 Tage</button>
-          <button type="button" data-days="30">30 Tage</button>
-          <button type="button" data-days="0">Alles</button>
-        </span>
-      </label>
-      <label>Prognose
-        <span class="seg" id="horizonSeg">
-          <button type="button" data-h="24">24 Std</button>
-          <button type="button" data-h="72">3 Tage</button>
-          <button type="button" data-h="168">7 Tage</button>
-        </span>
-      </label>
+    <div id="lead">
+      <p class="l1" id="leadNow"></p>
+      <p class="l2" id="leadCmp"></p>
+      <p class="l3" id="leadBest"></p>
+      <p class="l4" id="leadMeta"></p>
     </div>
 
-    <div class="tiles" id="tiles"></div>
-
-    <div class="card" id="bestCard">
-      <h2>Beste Zeit fürs Gym</h2>
+    <section id="bestCard">
+      <h2>Beste Zeit</h2>
       <p class="sub">Wann du am meisten Platz hast – aus Prognose und Historie.</p>
-      <div class="inline-controls" id="bestControls">
-        <span class="seg" id="bestDays" role="group" aria-label="Wochentage"></span>
-        <span>Mo–Fr von <select id="bestWkFrom"></select> bis <select id="bestWkTo"></select> Uhr</span>
-        <span>Sa/So von <select id="bestWeFrom"></select> bis <select id="bestWeTo"></select> Uhr</span>
-        <span>Dauer <span class="seg" id="bestDur">
-          <button type="button" data-dur="60">60 min</button>
-          <button type="button" data-dur="90">90 min</button>
-          <button type="button" data-dur="120">120 min</button>
-        </span></span>
-      </div>
-      <div class="perfect" id="perfect"></div>
+      <details id="bestSettings"><summary id="bestSummary"></summary>
+        <div class="inline-controls" id="bestControls">
+          <span class="seg" id="bestDays" role="group" aria-label="Wochentage"></span>
+          <span>Mo–Fr von <select id="bestWkFrom"></select> bis <select id="bestWkTo"></select> Uhr</span>
+          <span>Sa/So von <select id="bestWeFrom"></select> bis <select id="bestWeTo"></select> Uhr</span>
+          <span>Dauer <span class="seg" id="bestDur">
+            <button type="button" data-dur="60">60 min</button>
+            <button type="button" data-dur="90">90 min</button>
+            <button type="button" data-dur="120">120 min</button>
+          </span></span>
+        </div>
+      </details>
+      <p class="perfectline" id="perfect"></p>
       <div class="cols">
         <div>
           <h3>Nächste 7 Tage</h3>
@@ -402,49 +333,64 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
           <p class="mini" id="weeklyNote"></p>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2 id="fcTitle">Heute und Prognose</h2>
+    <section id="fcCard">
+      <h2 id="fcTitle">Verlauf und Prognose</h2>
       <p class="sub" id="fcSub"></p>
       <div class="legend" id="fcLegend"></div>
       <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
+      <div class="filters" role="group" aria-label="Filter">
+        <label>Verlauf
+          <span class="seg" id="rangeSeg">
+            <button type="button" data-days="1">Heute</button>
+            <button type="button" data-days="7">7 Tage</button>
+            <button type="button" data-days="30">30 Tage</button>
+            <button type="button" data-days="0">Alles</button>
+          </span>
+        </label>
+        <label>Prognose
+          <span class="seg" id="horizonSeg">
+            <button type="button" data-h="24">24 Std</button>
+            <button type="button" data-h="72">3 Tage</button>
+            <button type="button" data-h="168">7 Tage</button>
+          </span>
+        </label>
+      </div>
       <div class="dayswrap"><div class="days" id="fcDays"></div><div class="wxnote" id="fcWxNote" hidden>Wetter noch nicht geladen</div></div>
       <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
-    </div>
+      <h3>Verlauf</h3>
+      <div class="chart" id="histChart" tabindex="0" aria-label="Diagramm: gemessene Besucherzahl im Zeitverlauf"></div>
+      <details id="histTable"><summary>Verlauf als Tabelle (Stundenmittel)</summary><div class="tablewrap"></div></details>
+    </section>
 
-    <div class="card" id="effectsCard">
-      <h2>Was die Auslastung beeinflusst</h2>
+    <section id="heatCard">
+      <h2>Typische Woche</h2>
+      <p class="sub" id="heatSub">Durchschnitt je Wochentag und Stunde</p>
+      <div class="heat" id="heat" role="grid"></div>
+      <div class="scale"><span id="heatMin">0</span><span class="bar"></span><span id="heatMax"></span></div>
+      <details id="heatTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
+    </section>
+
+    <section id="overviewCard">
+      <h2>Alle Clubs</h2>
+      <p class="sub">Letzter Messwert und was um diese Uhrzeit üblich ist. Zeile anklicken zum Wechseln.</p>
+      <div class="tablewrap"><table id="overview"></table></div>
+    </section>
+
+    <details id="effectsCard">
+      <summary>Wie die Prognose rechnet</summary>
       <p class="sub" id="fxSub"></p>
       <div class="tablewrap"><table id="fxTable"></table></div>
       <h3>Prüfung (Backtest)</h3>
       <div id="fxBacktest"></div>
       <h3>Datenquellen</h3>
       <div id="fxSources"></div>
-    </div>
+    </details>
 
-    <div class="card">
-      <h2>Typische Woche</h2>
-      <p class="sub" id="heatSub">Durchschnitt je Wochentag und Stunde</p>
-      <div class="heat" id="heat" role="grid"></div>
-      <div class="scale"><span id="heatMin">0</span><span class="bar"></span><span id="heatMax"></span></div>
-      <details id="heatTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
-    </div>
+    <details id="runsBox"><summary>Abruf-Protokoll</summary><div class="tablewrap"><table id="runs"></table></div></details>
 
-    <div class="card">
-      <h2>Verlauf</h2>
-      <p class="sub" id="histSub"></p>
-      <div class="chart" id="histChart" tabindex="0" aria-label="Diagramm: gemessene Besucherzahl im Zeitverlauf"></div>
-      <details id="histTable"><summary>Als Tabelle (Stundenmittel)</summary><div class="tablewrap"></div></details>
-    </div>
-
-    <div class="card">
-      <h2>Alle Clubs</h2>
-      <p class="sub">Letzter Messwert und was um diese Uhrzeit üblich ist. Zeile anklicken zum Wechseln.</p>
-      <div class="tablewrap"><table id="overview"></table></div>
-    </div>
-
-    <details class="card" id="runsBox"><summary>Abruf-Protokoll</summary><div class="tablewrap"><table id="runs"></table></div></details>
+    <footer>Daten: visits.evofitness.de, Wetter: Open-Meteo, Ferien: OpenHolidays. Schrift: Archivo (OFL), Icons: Phosphor (MIT).</footer>
   </section>
 </main>
 
@@ -485,15 +431,21 @@ const fmtTime = (ms) => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digi
 const fmtDay = (ms) => { const d = new Date(ms); return WD[(d.getDay() + 6) % 7] + " " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }); };
 const fmtDT = (ms) => fmtDay(ms) + " " + fmtTime(ms);
 function wxIcon(code) {
-  if (code === 0) return "☀️";
-  if (code === 1 || code === 2) return "🌤️";
-  if (code === 3) return "☁️";
-  if (code === 45 || code === 48) return "🌫️";
-  if (code >= 51 && code <= 57) return "🌦️";
-  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "🌧️";
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return "🌨️";
-  if (code >= 95 && code <= 99) return "⛈️";
-  return "☁️";
+  let id = "i-cloud";
+  if (code === 0) id = "i-sun";
+  else if (code === 1 || code === 2) id = "i-cloud-sun";
+  else if (code === 3) id = "i-cloud";
+  else if (code === 45 || code === 48) id = "i-cloud-fog";
+  else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) id = "i-cloud-rain";
+  else if ((code >= 71 && code <= 77) || code === 85 || code === 86) id = "i-cloud-snow";
+  else if (code >= 95 && code <= 99) id = "i-cloud-lightning";
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "ic");
+  svg.setAttribute("viewBox", "0 0 256 256");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", "#" + id);
+  svg.append(use);
+  return svg;
 }
 function wxText(code) {
   if (code === 0) return "sonnig";
@@ -507,8 +459,6 @@ function wxText(code) {
 }
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const gymShort = (name) => (name || "").replace(/^EVO\s+/, "");
-const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let countUpGym = null;
 function updateTitle() {
   if (!state.gym) { document.title = "EVO Auslastung"; return; }
   const d = state.data;
@@ -793,26 +743,21 @@ function table(target, head, rows) {
 // Rendering
 
 function renderStatus() {
-  const s = state.status, box = $("#status");
-  box.textContent = "";
-  const dot = el("span", { class: "dot" });
+  const s = state.status, stand = $("#stand");
   const last = s.runs[0];
-  let text;
+  let text, failed = false;
   if (STATIC) {
-    if (last) dot.classList.add(last.ok ? "ok" : "err");
-    text = `Stand ${fmtDT(s.generated_at * 1000)} · aktualisiert zur vollen Viertelstunde`;
-  } else if (s.demo) { text = "Demo-Modus, kein Abruf"; }
+    text = `Stand ${fmtTime(s.generated_at * 1000)}`;
+    failed = !!(last && !last.ok);
+  } else if (s.demo) { text = "Demo-Modus"; }
   else if (!last) { text = "warte auf ersten Abruf"; }
   else {
-    dot.classList.add(last.ok ? "ok" : "err");
-    text = (last.ok ? `letzter Abruf ${fmtTime(last.ts * 1000)}, ${last.n} Clubs` : `Abruf fehlgeschlagen ${fmtTime(last.ts * 1000)}`);
-    if (s.collector && s.collector.next_run) text += ` · nächster ${fmtTime(s.collector.next_run * 1000)}`;
-    if (s.collector && !s.collector.active_now) text += ` · Pause bis ${s.active_hours.split("-")[0]}`;
+    if (last.ok) text = `Stand ${fmtTime(last.ts * 1000)}`;
+    else { text = "Abruf fehlgeschlagen"; failed = true; }
   }
-  if (dot.classList.contains("ok")) dot.classList.add("pulse");
-  box.append(dot, el("span", {}, text));
+  stand.textContent = failed ? "Abruf fehlgeschlagen" : text;
+  stand.classList.toggle("err", failed);
   $("#demoBanner").classList.toggle("hidden", !s.demo);
-  $("#collectBtn").classList.toggle("hidden", s.demo || !!STATIC);
   const err = $("#errorBanner");
   if (last && !last.ok) {
     err.textContent = "";
@@ -853,117 +798,85 @@ function renderOverview() {
   t.append(tb);
 }
 
-function tile(label, value, unit, note, opts = {}) {
-  const t = el("div", { class: "tile" + (opts.hero ? " hero" : "") });
-  t.append(el("div", { class: "label" }, label));
-  const v = el("div", { class: "value" }, value);
-  if (unit) v.append(el("small", {}, unit));
-  t.append(v);
-  if (opts.meter != null) {
-    const m = el("div", { class: "meter", role: "meter", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(Math.round(opts.meter)) });
-    const s = el("span"); s.style.width = Math.max(0, Math.min(100, opts.meter)) + "%";
-    m.append(s); t.append(m);
-  }
-  if (note) t.append(el("div", { class: "note" }, note));
-  return t;
+function daypartWord(h) {
+  if (h >= 5 && h < 10) return "morgen";
+  if (h >= 10 && h < 12) return "vormittag";
+  if (h >= 12 && h < 14) return "mittag";
+  if (h >= 14 && h < 17) return "nachmittag";
+  return "abend";
 }
+const WD_FULL = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 
-function heroStatusWord(cur, typ, pct) {
-  if (cur == null) return { word: "–", color: "var(--text-muted)" };
-  if (typ != null && typ > 0) {
-    const ratio = cur / typ;
-    if (ratio < 0.8) return { word: "RUHIG", color: "var(--signal)" };
-    if (ratio <= 1.2) return { word: "NORMAL", color: "var(--accent)" };
-    return { word: "VOLL", color: "var(--hot)" };
-  }
-  if (pct != null) {
-    if (pct < 70) return { word: "RUHIG", color: "var(--signal)" };
-    if (pct <= 120) return { word: "NORMAL", color: "var(--accent)" };
-    return { word: "VOLL", color: "var(--hot)" };
-  }
-  return { word: "NORMAL", color: "var(--accent)" };
-}
-
-function animateCount(node, target, dur = 600) {
-  if (REDUCED_MOTION || !Number.isFinite(target)) { node.textContent = nf(target); return; }
-  const t0 = performance.now();
-  const step = (t) => {
-    const p = Math.min(1, (t - t0) / dur);
-    const e = 1 - Math.pow(1 - p, 3);
-    node.textContent = nf(Math.round(target * e));
-    if (p < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-
-function renderTiles() {
-  const d = state.data, box = $("#tiles");
-  box.textContent = "";
+function renderLead() {
+  const d = state.data;
   const u = d.unit, nowMs = d.now * 1000;
-  const fresh = d.now - d.last.ts < 3600;
+  const fresh = d.now - d.last.ts < 40 * 60;
   const cur = fresh ? d.last.value : null;
+  const club = gymShort(state.gym);
+
+  const gEntry = state.gyms.find((g) => g.gym === state.gym);
+  let typVal = gEntry ? gEntry.typical_now : null;
+  if (typVal == null) {
+    const typ = d.typical_today.reduce((best, p) => (p[1] != null && Math.abs(p[0] - nowMs) < Math.abs((best?.[0] ?? Infinity) - nowMs) ? p : best), null);
+    typVal = typ ? typ[1] : null;
+  }
+
+  const l1 = $("#leadNow");
+  l1.textContent = "";
+  if (cur == null && !fresh && d.last.value != null) {
+    l1.append(document.createTextNode("Zuletzt "));
+    const b = el("b", {}, nf(d.last.value));
+    l1.append(b, document.createTextNode(` Leute in ${club}.`));
+  } else if (cur == null) {
+    l1.textContent = `Noch keine Messung für ${club}.`;
+  } else {
+    const b = el("b", {}, nf(cur));
+    l1.append(b, document.createTextNode(` Leute in ${club}.`));
+  }
+
+  const l2 = $("#leadCmp");
+  l2.textContent = "";
+  const now = new Date(nowMs);
+  const dayWord = WD_FULL[now.getDay()] + daypartWord(now.getHours());
   const pct = u === "percent" ? cur : (d.capacity && cur != null ? cur / d.capacity * 100 : null);
-
-  const typ = d.typical_today.reduce((best, p) => (p[1] != null && Math.abs(p[0] - nowMs) < Math.abs((best?.[0] ?? Infinity) - nowMs) ? p : best), null);
-  const typVal = typ ? typ[1] : null;
-  const st = heroStatusWord(cur, typVal, pct);
-
-  // Hero „Jetzt im Club“
-  const hero = el("div", { class: "tile hero" });
-  const eyebrow = el("div", { class: "label" }, `Jetzt im Club · ${gymShort(state.gym)} · Stand ${fmtTime(d.last.ts * 1000)}`);
-  hero.append(eyebrow);
-  const flex = el("div", { class: "hero-flex" });
-  const value = el("div", { class: "value" });
-  const numSpan = el("span", { class: "hero-num" }, "–");
-  value.append(numSpan, el("small", {}, cur == null ? "" : (u === "percent" ? "%" : "Personen")));
-  flex.append(value);
-  flex.append(el("div", { class: "hero-status", style: `color:${st.color}` }, st.word));
-  hero.append(flex);
-  if (cur != null) {
-    if (countUpGym !== state.gym) { countUpGym = state.gym; animateCount(numSpan, cur); }
-    else numSpan.textContent = nf(cur);
+  if (cur != null && typVal != null && typVal > 0) {
+    const ratio = cur / typVal;
+    const phrase = ` als sonst am ${dayWord}, üblich sind ~${nf(typVal)}.`;
+    if (ratio < 0.8) l2.append(el("span", { class: "g" }, "Ruhiger"), document.createTextNode(phrase));
+    else if (ratio <= 1.2) l2.textContent = `Ungefähr wie sonst am ${dayWord}.`;
+    else l2.append(el("span", { class: "r" }, "Voller"), document.createTextNode(phrase));
+  } else if (cur != null && pct != null && d.capacity) {
+    if (pct < 70) l2.append(el("span", { class: "g" }, "Eher ruhig"), document.createTextNode(`, der Richtwert von EVO liegt bei ${nf(d.capacity)}.`));
+    else if (pct <= 120) l2.textContent = `Mittel voll, Richtwert ${nf(d.capacity)}.`;
+    else l2.append(el("span", { class: "r" }, "Ziemlich voll"), document.createTextNode(`, deutlich über dem Richtwert von ${nf(d.capacity)}.`));
+  } else {
+    l2.textContent = "";
   }
 
-  const scale = Math.max((d.capacity || 0) * 2, cur ?? 0, typVal ?? 0) * 1.05;
-  const barAttrs = { class: "pulsebar", role: "meter", "aria-valuemin": "0", "aria-valuemax": String(Math.round(scale)) };
-  if (cur != null) barAttrs["aria-valuenow"] = String(cur);
-  const bar = el("div", barAttrs);
-  if (cur != null) {
-    const fill = el("div", { class: "fill" });
-    fill.style.width = Math.max(0, Math.min(100, cur / scale * 100)) + "%";
-    fill.style.background = st.color;
-    bar.append(fill);
+  const l3 = $("#leadBest");
+  l3.textContent = "";
+  const hasFc = d.forecast.some((p) => p[1] != null);
+  let bestToday = null;
+  if (hasFc) {
+    const rows = bestForecastWindows(d);
+    const todayKey = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+    for (const { day, win } of rows) if (win && day.date === todayKey && (!bestToday || win.avg < bestToday.avg)) bestToday = win;
   }
-  if (typVal != null && typVal > 0) {
-    const mark = el("div", { class: "mark" });
-    mark.style.left = Math.max(0, Math.min(100, typVal / scale * 100)) + "%";
-    const ml = el("span", { class: "marklabel" }, "üblich");
-    ml.style.left = mark.style.left;
-    bar.append(mark, ml);
+  if (bestToday) {
+    l3.append(document.createTextNode("Beste Zeit heute: "));
+    l3.append(el("b", {}, `${fmtTime(bestToday.start)}–${fmtTime(bestToday.end)}`));
+    l3.append(document.createTextNode(`, etwa ${nf(bestToday.avg)} Leute.`));
+  } else if (hasFc) {
+    l3.textContent = "Für heute keine passende Zeit mehr in deinem Zeitfenster.";
+  } else {
+    l3.textContent = "Eine Prognose gibt es nach dem ersten vollen Messtag.";
   }
-  hero.append(bar);
-  if (!fresh) hero.append(el("div", { class: "note" }, `letzter Wert ${fmtDT(d.last.ts * 1000)}`));
-  else if (d.capacity && u !== "percent") hero.append(el("div", { class: "note" }, `max. ${nf(d.capacity)} Personen`));
-  box.append(hero);
 
-  // Kompakte Reihe: Üblich, Prognose in 1 Std, Datenbasis
-  const row = el("div", { class: "compact-row" });
-  let note = "";
-  if (typ && cur != null && typ[1] > 0) {
-    const dev = (cur - typ[1]) / typ[1] * 100;
-    note = Math.abs(dev) < 5 ? "aktuell ungefähr wie üblich" : `aktuell ${nf(Math.abs(dev))} % ${dev > 0 ? "voller" : "leerer"} als üblich`;
-  }
-  row.append(tile("Üblich um diese Zeit", typ ? nf(typ[1]) : "–", typ ? unitLabel(u) : "", note || (d.n_days < 7 ? "braucht ein paar Tage Daten" : "")));
-
-  const in1h = d.forecast.find((p) => p[0] >= nowMs + 55 * 60e3 && p[1] != null);
-  const hasForecast = d.forecast.some((p) => p[1] != null);
-  row.append(tile("Prognose in 1 Std", in1h ? nf(in1h[1]) : "–", in1h ? unitLabel(u) : "",
-    in1h ? `${fmtTime(in1h[0])} · Spanne ${nf(in1h[2])}–${nf(in1h[3])}` : (hasForecast ? "außerhalb der Öffnungszeit" : "ab dem ersten vollen Messtag")));
-
-  const bt = d.backtest;
-  row.append(tile("Datenbasis", nf(d.n_days), d.n_days === 1 ? "Tag" : "Tage",
-    d.n_days === 0 ? `Aufzeichnung läuft seit ${fmtDT(d.first_ts * 1000)}` : bt ? `Prognose lag zuletzt im Schnitt ±${nf(bt.mae_model, 1)} daneben (Vorwoche als Prognose: ±${nf(bt.mae_last_week, 1)})` : "Prognosegüte ab ca. 2 Wochen Daten"));
-  box.append(row);
+  const l4 = $("#leadMeta");
+  const parts = [`Stand ${fmtTime(d.last.ts * 1000)}`];
+  if (d.capacity) parts.push(`Richtwert ${nf(d.capacity)}`);
+  parts.push(`Datenbasis ${nf(d.n_days)} ${d.n_days === 1 ? "Tag" : "Tage"}`);
+  l4.textContent = parts.join(" · ");
 }
 
 function renderForecast() {
@@ -980,17 +893,17 @@ function renderForecast() {
       const out = [];
       const w = p[5];
       if (w) {
-        const parts = [`${wxIcon(w.code)} ${nf(w.temp)} °C`];
-        if (w.precip > 0) parts.push(`${nf(w.precip, 1)} mm`);
+        const parts = [`${nf(w.temp)} °C`];
+        if (w.precip > 0) parts.push(`${nf(w.precip, 1)} mm Regen`);
         if (w.sun_min > 0) parts.push(`${nf(w.sun_min)} min Sonne`);
-        out.push(parts.join(" · "));
+        out.push(parts.join(", "));
       }
       if (p[4] != null && Math.abs(p[4]) >= 1) out.push(`Wetter/Kalender: ${(p[4] > 0 ? "+" : "−") + nf(Math.abs(p[4]))} %`);
       return out;
     },
   });
   series.push({ name: "Gemessen", color: c1, points: d.today_actual.length ? d.today_actual : d.history.filter((p) => p[0] >= x0), gap: 40 * 60e3, endLabel: true });
-  $("#fcTitle").textContent = h === 24 ? "Heute und die nächsten 24 Stunden" : `Prognose für die nächsten ${h / 24} Tage`;
+  $("#fcTitle").textContent = "Verlauf und Prognose";
   $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · Band = 80 % der erwarteten Werte`;
   const leg = [{ name: "Gemessen", color: c1 }, { name: "Prognose", color: c2, cls: "dash" }, { name: "80-%-Band", color: c2, cls: "band" }];
   if (h === 24) leg.push({ name: "Üblich an diesem Wochentag", color: cr });
@@ -1017,7 +930,7 @@ function renderDays() {
     if (day.weather) {
       const w = day.weather;
       const wx = el("div", { class: "wx", title: wxText(w.code), "aria-label": wxText(w.code) });
-      wx.append(document.createTextNode(`${wxIcon(w.code)} ${Math.round(w.tmax)}° / ${Math.round(w.tmin)}°`));
+      wx.append(wxIcon(w.code), document.createTextNode(`${Math.round(w.tmax)}° / ${Math.round(w.tmin)}°`));
       c.append(wx);
       if (w.precip >= 0.5) c.append(el("div", { class: "pr" }, `${nf(w.precip, 1)} mm`));
     } else {
@@ -1155,7 +1068,7 @@ function renderHistory() {
   const gap = pts.length && d.history.length > 2500 ? 3 * 3600e3 : 40 * 60e3;
   lineChart($("#histChart"), { x0, x1: nowMs, series: [{ name: "Gemessen", color: c1, points: pts, gap, endLabel: true }], now: nowMs, unit: d.unit });
   const label = { 1: "heute", 7: "letzte 7 Tage", 30: "letzte 30 Tage", 0: "seit Beginn der Aufzeichnung" }[state.days];
-  $("#histSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · ${label} · ${nf(d.history.length)} Messpunkte`;
+  $("#histTable").querySelector("summary").textContent = `Verlauf als Tabelle (Stundenmittel, ${label})`;
   const rows = hourlyMeans(d.history).reverse().slice(0, 24 * 31).map(([t, v]) => [fmtDT(t), nf(v, 1)]);
   table($("#histTable .tablewrap"), ["Stunde", "Mittel"], rows);
 }
@@ -1298,10 +1211,22 @@ function dayPills(day) {
   return pills;
 }
 
+function updateBestSummary() {
+  const b = state.best;
+  const days = [];
+  const wd = b.wd;
+  if (wd.slice(0, 5).every(Boolean)) days.push("Mo–Fr");
+  else if (wd[0] || wd[1] || wd[2] || wd[3] || wd[4]) days.push(WD.filter((_, i) => i < 5 && wd[i]).join("/"));
+  if (wd.slice(5).every(Boolean)) days.push("Sa/So");
+  else if (wd[5] || wd[6]) days.push(WD.filter((_, i) => i >= 5 && wd[i]).join("/"));
+  $("#bestSummary").textContent = `${days.join(", ") || "kein Tag"} ${b.wkFrom}–${b.wkTo} Uhr, Sa/So ${b.weFrom}–${b.weTo} Uhr, ${b.dur} min`;
+}
+
 function renderBestCard() {
   const d = state.data, unitS = d.unit === "percent" ? "%" : "Pers.";
   const nextList = $("#nextList"), weeklyList = $("#weeklyList"), note = $("#weeklyNote"), pf = $("#perfect");
   nextList.textContent = ""; weeklyList.textContent = ""; note.textContent = ""; pf.textContent = "";
+  updateBestSummary();
 
   // Nächste 7 Tage (Prognose)
   const hasFc = d.forecast.some((p) => p[1] != null);
@@ -1313,14 +1238,14 @@ function renderBestCard() {
       const isTop = win && bestFc && day.date === bestFc.day.date;
       const li = el("li", isTop ? { class: "top" } : {});
       const when = el("span", { class: "when" }, dayLabel(day) + (win ? " · " + fmtTime(win.start) + "–" + fmtTime(win.end) : ""));
-      if (isTop) when.append(el("span", { class: "pill" }, "beste"));
+      if (isTop) when.append(el("b", { class: "best-tag" }, "beste"));
       li.append(when);
       if (win) {
         const rgt = el("span", { class: "rgt" });
         rgt.append(el("b", {}, "~" + nf(win.avg) + " " + unitS), el("span", { class: "mini" }, nf(win.lo) + "–" + nf(win.hi)));
         if (day.weather) {
           const wx = el("span", { title: wxText(day.weather.code) });
-          wx.textContent = wxIcon(day.weather.code) + " " + Math.round(day.weather.tmax) + "°";
+          wx.append(wxIcon(day.weather.code), document.createTextNode(" " + Math.round(day.weather.tmax) + "°"));
           rgt.append(wx);
         }
         dayPills(day).forEach((p) => rgt.append(p));
@@ -1356,37 +1281,31 @@ function renderBestCard() {
     weeklyList.append(el("li", { class: "muted" }, "Noch keine abgeschlossenen Tage für diese Auswahl."));
   }
 
-  // Die perfekte Zeit
+  // Am besten
   pf.textContent = "";
-  pf.append(el("span", { class: "eyebrow" }, "Perfekte Zeit"));
   if (bestFc) {
     const { day, win } = bestFc;
-    pf.append(el("span", { class: "big" }, `${dayLabel(day)} · ${fmtTime(win.start)}–${fmtTime(win.end)}`));
-    const side = el("span", { class: "side" });
-    side.append(el("b", {}, `~${nf(win.avg)} ${d.unit === "percent" ? "%" : "Personen"}`));
-    if (day.weather) {
-      const wx = el("span", { title: wxText(day.weather.code) });
-      wx.textContent = wxIcon(day.weather.code);
-      side.append(wx);
-    }
+    pf.append(document.createTextNode("Am besten: "));
+    pf.append(el("span", { class: "t" }, `${dayLabel(day)} ${fmtTime(win.start)}–${fmtTime(win.end)}`));
+    pf.append(document.createTextNode(`, etwa ${nf(win.avg)} ${d.unit === "percent" ? "%" : "Personen"}.`));
+    if (day.weather) pf.title = wxText(day.weather.code);
     if (gen && gen.wd === day.weekday && gen.startMin === new Date(win.start).getHours() * 60 + new Date(win.start).getMinutes()) {
-      side.append(el("span", { class: "mini" }, "meist unter " + nf(gen.p75)));
+      pf.append(document.createTextNode(" "));
+      pf.append(el("span", { class: "mini" }, "meist unter " + nf(gen.p75)));
     }
-    pf.append(side);
   } else if (gen) {
-    pf.append(el("span", { class: "big" }, `${WD[gen.wd]} ${fmtMin(gen.startMin)}–${fmtMin(gen.endMin)}`));
-    const side = el("span", { class: "side" });
-    side.append(el("b", {}, `typisch ~${nf(gen.typ)} ${d.unit === "percent" ? "%" : "Personen"}`));
-    side.append(el("span", { class: "mini" }, "(aus der Historie)"));
-    pf.append(side);
+    pf.append(document.createTextNode("Am besten: "));
+    pf.append(el("span", { class: "t" }, `${WD[gen.wd]} ${fmtMin(gen.startMin)}–${fmtMin(gen.endMin)}`));
+    pf.append(document.createTextNode(`, typisch ~${nf(gen.typ)} ${d.unit === "percent" ? "%" : "Personen"}`));
+    pf.append(el("span", { class: "mini" }, " (aus der Historie)."));
   } else {
-    pf.append(el("span", { class: "big" }, "Noch zu wenig Daten."));
+    pf.textContent = "Noch zu wenig Daten.";
   }
 }
 
 function renderAll() {
   if (!state.data) return;
-  renderTiles(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
+  renderLead(); renderForecast(); renderDays(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1447,7 +1366,6 @@ async function refresh(full = true) {
   else if (!names.includes(state.gym)) state.gym = names.includes(DEFAULT_GYM) ? DEFAULT_GYM : names[0];
   sel.value = state.gym;
   renderQuickChips();
-  if (!document.getElementById("app").classList.contains("revealed")) revealCards();
   if (full) await loadGym(); else renderOverview();
 }
 
@@ -1457,17 +1375,13 @@ function renderQuickChips() {
   const names = state.gyms.map((g) => g.gym);
   for (const q of QUICK) {
     if (!names.includes(q.gym)) continue;
-    const b = el("button", { type: "button", class: "chip", "aria-pressed": String(state.gym === q.gym) }, q.label);
+    const b = el("button", { type: "button", "aria-pressed": String(state.gym === q.gym) }, q.label);
     b.addEventListener("click", () => selectGym(q.gym));
     host.append(b);
   }
-}
-
-function revealCards() {
-  const app = document.getElementById("app");
-  app.classList.add("revealed");
-  const cards = [...app.querySelectorAll("section > *")];
-  cards.forEach((c, i) => { c.style.setProperty("--i", String(Math.min(i, 8))); c.classList.add("reveal"); });
+  const other = state.gyms.find((g) => g.gym === state.gym);
+  const selEl = $("#gymSel");
+  selEl.classList.toggle("hidden", !other || QUICK.some((q) => q.gym === state.gym));
 }
 
 function selectGym(name) {
@@ -1502,7 +1416,7 @@ function initControls() {
     sel[k].value = state.best[k];
   }
   durSeg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.dur) === state.best.dur)));
-  const saveBest = () => { store.set("best", state.best); if (state.data) renderBestCard(); };
+  const saveBest = () => { store.set("best", state.best); updateBestSummary(); if (state.data) renderBestCard(); };
   daysSeg.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     const i = Number(b.dataset.wd);
@@ -1519,9 +1433,15 @@ function initControls() {
     saveBest();
   });
   $("#collectBtn").addEventListener("click", async (e) => {
-    const b = e.currentTarget; b.disabled = true; b.textContent = "Rufe ab …";
+    e.preventDefault();
+    const b = e.currentTarget;
+    if (b.classList.contains("busy")) return;
+    b.classList.add("busy");
+    const old = b.textContent;
+    b.textContent = "Rufe ab …";
     try { await api("/api/collect", { method: "POST" }); } catch (err) { console.error(err); }
-    b.disabled = false; b.textContent = "Jetzt abrufen";
+    b.textContent = old;
+    b.classList.remove("busy");
     refresh();
   });
   let rt;
@@ -1532,7 +1452,7 @@ function initControls() {
 initControls();
 if (STATIC) {
   $("#collectBtn").classList.add("hidden");
-  document.querySelector('a.btn[href="/api/export.csv"]').setAttribute("href", "api/export.csv");
+  document.querySelector('a[href="/api/export.csv"]').setAttribute("href", "api/export.csv");
 }
 refresh();
 setInterval(() => refresh(true), STATIC ? 5 * 60e3 : 60e3);
