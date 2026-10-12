@@ -6,6 +6,7 @@
   python3 evo_visits.py probe          Seite analysieren, Rohdaten nach data/probe/ schreiben
   python3 evo_visits.py demo           Dashboard mit synthetischen Demo-Daten (eigene DB)
   python3 evo_visits.py context        Wetter + Schulferien der Clubs einmal abrufen und cachen
+  python3 evo_visits.py export         Static-Seite (JSON + index.html) fuer GitHub Pages schreiben
   python3 evo_visits.py export-csv     Monats-Dateien visits-YYYY-MM.csv nach data/ schreiben
   python3 evo_visits.py import-csv     Monats-Dateien aus data/ wieder einlesen
   python3 evo_visits.py launchd        macOS-Autostart (LaunchAgent-plist) ausgeben
@@ -24,7 +25,7 @@ from evo.store import Store
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
-    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context",
+    ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "export",
                                         "export-csv", "import-csv", "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
@@ -35,6 +36,7 @@ def main(argv: list[str]) -> int:
                     help="collect: nur innerhalb der aktiven Stunden abrufen")
     ap.add_argument("--active-hours", help="Aktives Fenster als HH:MM-HH:MM (ueberschreibt config)")
     ap.add_argument("--dir", type=Path, help="Verzeichnis fuer CSV-Export/-Import (Default: data/)")
+    ap.add_argument("--out", type=Path, help="Ausgabeverzeichnis fuer 'export' (Default: site/)")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -96,6 +98,13 @@ def main(argv: list[str]) -> int:
                     print(f"  {source}: ok, {r['n']} Zeilen" + (" (aus Cache)" if r["cached"] else ""))
                 else:
                     print(f"  {source}: FEHLER, {r['error']}")
+    elif args.command == "export":
+        from evo.context import Context
+        from evo.static_export import export_site
+        store = Store(cfg.db_path)
+        out_dir = args.out or (PROJECT_DIR / "site")
+        res = export_site(cfg, store, out_dir, ctx=Context(store, cfg))
+        print(f"{res['gyms']} Clubs, {res['files']} Dateien nach {res['out']} geschrieben")
     elif args.command == "export-csv":
         from evo.csvstore import export_monthly
         from evo.forecast import get_tz

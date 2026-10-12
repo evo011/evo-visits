@@ -301,6 +301,8 @@ details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
 
 <script>
 "use strict";
+const STATIC = window.EVO_STATIC || null;
+let staticVersion = STATIC ? STATIC.generated_at : null;
 const $ = (s) => document.querySelector(s);
 const WD = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 let HEAT_HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // Standard 6 bis 22 Uhr, wird an die Daten angepasst
@@ -309,9 +311,21 @@ const store = {
   set(k, v) { try { localStorage.setItem("evo." + k, JSON.stringify(v)); } catch {} },
 };
 const BEST_DEFAULTS = { wd: [true, true, true, true, true, true, true], wkFrom: 17, wkTo: 22, weFrom: 9, weTo: 19, dur: 60 };
+function loadBest() {
+  const saved = store.get("best", null);
+  const best = { ...BEST_DEFAULTS, ...(saved || {}) };
+  if (!Array.isArray(best.wd) || best.wd.length !== 7 || !best.wd.every((v) => typeof v === "boolean") || !best.wd.some(Boolean)) best.wd = [...BEST_DEFAULTS.wd];
+  for (const k of ["wkFrom", "wkTo", "weFrom", "weTo"]) {
+    if (!Number.isInteger(best[k]) || best[k] < 6 || best[k] > 23) best[k] = BEST_DEFAULTS[k];
+  }
+  if (best.wkFrom >= best.wkTo) { best.wkFrom = BEST_DEFAULTS.wkFrom; best.wkTo = BEST_DEFAULTS.wkTo; }
+  if (best.weFrom >= best.weTo) { best.weFrom = BEST_DEFAULTS.weFrom; best.weTo = BEST_DEFAULTS.weTo; }
+  if (![60, 90, 120].includes(best.dur)) best.dur = 60;
+  return best;
+}
 const state = {
   gym: store.get("gym", null), days: store.get("days", 7), horizon: store.get("horizon", 24),
-  best: store.get("best", BEST_DEFAULTS), status: null, gyms: [], data: null, weekly: null,
+  best: loadBest(), status: null, gyms: [], data: null, weekly: null,
 };
 
 const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -353,11 +367,45 @@ function svgEl(tag, attrs = {}) {
   return e;
 }
 
+const bust = (url) => url + (url.includes("?") ? "&" : "?") + "v=" + (staticVersion || 0);
+
+function staticPath(path) {
+  const u = new URL(path, "http://x");
+  if (u.pathname === "/api/status") return bust("api/status.json");
+  if (u.pathname === "/api/gyms") return bust("api/gyms.json");
+  if (u.pathname === "/api/gym") {
+    const entry = state.gyms.find((g) => g.gym === u.searchParams.get("gym"));
+    if (!entry) throw new Error("unbekannter Club");
+    return bust(`api/gym/${entry.slug}.json`);
+  }
+  if (u.pathname === "/api/weekly") {
+    const entry = state.gyms.find((g) => g.gym === u.searchParams.get("gym"));
+    if (!entry) throw new Error("unbekannter Club");
+    return bust(`api/weekly/${entry.slug}.json`);
+  }
+  throw new Error("Im Static-Export nicht verfügbar: " + u.pathname);
+}
+
 async function api(path, opts) {
-  const r = await fetch(path, opts);
-  const j = await r.json();
-  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
-  return j;
+  let data;
+  if (STATIC) {
+    data = await fetch(staticPath(path), opts).then((r) => r.json());
+  } else {
+    const r = await fetch(path, opts);
+    data = await r.json();
+    if (!r.ok || data.error) throw new Error(data.error || r.statusText);
+  }
+  if (data.error) throw new Error(data.error);
+  if (data.static && data.generated_at) staticVersion = data.generated_at;
+  // Clientseitige Tagesfilterung, weil der Export die volle Historie enthaelt
+  if (STATIC && path.startsWith("/api/gym")) {
+    const days = Number(new URL(path, "http://x").searchParams.get("days"));
+    if (days > 0) {
+      const sinceMs = data.now * 1000 - days * 86400e3;
+      data.history = data.history.filter((p) => p[0] >= sinceMs);
+    }
+  }
+  return data;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -585,7 +633,10 @@ function renderStatus() {
   const dot = el("span", { class: "dot" });
   const last = s.runs[0];
   let text;
-  if (s.demo) { text = "Demo-Modus, kein Abruf"; }
+  if (STATIC) {
+    if (last) dot.classList.add(last.ok ? "ok" : "err");
+    text = `Stand ${fmtDT(s.generated_at * 1000)} · wird etwa alle 15 Minuten aktualisiert`;
+  } else if (s.demo) { text = "Demo-Modus, kein Abruf"; }
   else if (!last) { text = "warte auf ersten Abruf"; }
   else {
     dot.classList.add(last.ok ? "ok" : "err");
@@ -595,7 +646,7 @@ function renderStatus() {
   }
   box.append(dot, el("span", {}, text));
   $("#demoBanner").classList.toggle("hidden", !s.demo);
-  $("#collectBtn").classList.toggle("hidden", s.demo);
+  $("#collectBtn").classList.toggle("hidden", s.demo || !!STATIC);
   const err = $("#errorBanner");
   if (last && !last.ok) {
     err.textContent = "";
@@ -1118,8 +1169,15 @@ async function refresh(full = true) {
   const has = state.gyms.length > 0;
   $("#empty").classList.toggle("hidden", has);
   $("#content").classList.toggle("hidden", !has);
-  $("#emptyUrl").textContent = state.status.url;
-  $("#emptyInterval").textContent = state.status.interval_minutes;
+  const emptyPs = $("#empty").querySelectorAll("p");
+  if (STATIC) {
+    emptyPs[0].textContent = "Noch keine Messwerte veröffentlicht.";
+    emptyPs[1].classList.add("hidden");
+  } else {
+    emptyPs[1].classList.remove("hidden");
+    $("#emptyUrl").textContent = state.status.url;
+    $("#emptyInterval").textContent = state.status.interval_minutes;
+  }
   if (!has) return;
   const sel = $("#gymSel");
   const names = state.gyms.map((g) => g.gym);
@@ -1191,8 +1249,12 @@ function initControls() {
 }
 
 initControls();
+if (STATIC) {
+  $("#collectBtn").classList.add("hidden");
+  document.querySelector('a.btn[href="/api/export.csv"]').setAttribute("href", "api/export.csv");
+}
 refresh();
-setInterval(() => refresh(true), 60e3);
+setInterval(() => refresh(true), STATIC ? 5 * 60e3 : 60e3);
 </script>
 </body>
 </html>
