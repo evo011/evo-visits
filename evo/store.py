@@ -60,6 +60,10 @@ class Store:
             finally:
                 conn.close()
 
+    def conn(self):
+        """Oeffentlicher Zugriff auf dieselbe Verbindung wie _conn() (Context-Manager)."""
+        return self._conn()
+
     def add_readings(self, ts: int, readings: list[Reading]) -> int:
         return self.add_batch([(ts, r) for r in readings])
 
