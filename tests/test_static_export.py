@@ -1,7 +1,7 @@
 import json
 import tempfile
 import unittest
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from evo.config import Config
@@ -110,6 +110,33 @@ class ExportSiteTestCase(unittest.TestCase):
         res = export_site(self.cfg, self.store, out, now=NOW_TS)
         self.assertEqual(res["gyms"], 2)
         self.assertTrue((out / "api" / "status.json").exists())
+        accuracy = json.loads((out / "api" / "accuracy.json").read_text(encoding="utf-8"))
+        self.assertEqual(accuracy["days"], 0)
+        self.assertEqual(accuracy["generated_at"], NOW_TS)
+
+    def test_export_with_snapshot_dir(self):
+        from evo.snapshot import HEADER
+
+        snap = Path(self.tmp.name) / "forecasts"
+        snap.mkdir()
+        target = NOW_TS - 3600  # 11:00 lokale Zeit, Zielfenster laengst vorbei
+        gym = self.GYMS[0]
+        row = ("2026-10-05", NOW_TS - 7 * 86400, gym, target,
+               datetime.fromtimestamp(target, NOW.tzinfo).strftime("%Y-%m-%d %H:%M"),
+               "161.0", 41, 39, 43, "", "", "", "", "", "abc1234")
+        (snap / "forecast-2026-10.csv").write_text(
+            ",".join(HEADER) + "\n" + ",".join(str(x) for x in row) + "\n",
+            encoding="utf-8")
+
+        out = Path(self.tmp.name) / "site3"
+        res = export_site(self.cfg, self.store, out, ctx=FakeContext(weather_map=synth_weather()),
+                          now=NOW_TS, snapshot_dir=snap)
+        self.assertEqual(res["gyms"], 2)
+        accuracy = json.loads((out / "api" / "accuracy.json").read_text(encoding="utf-8"))
+        self.assertEqual(accuracy["generated_at"], NOW_TS)
+        self.assertGreaterEqual(accuracy["days"], 1)
+        self.assertIn("4_7d", accuracy["all"])
+        self.assertEqual(accuracy["all"]["4_7d"]["n"], 1)
 
 
 if __name__ == "__main__":

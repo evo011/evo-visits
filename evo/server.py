@@ -12,10 +12,12 @@ import traceback
 from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 from .calendar_de import locate
+from .evaluate import empty_result, evaluate
 from .config import WEB_DIR, Config, in_active_window
 from .context import Context
 from .fetch import collect_once
@@ -88,6 +90,7 @@ class App:
         self._pooled_cache: Optional[tuple[tuple, Pooled]] = None
         self._mlock = threading.Lock()
         self._backtests: dict[tuple, Optional[dict]] = {}
+        self._accuracy: Optional[tuple] = None
 
     def now(self) -> int:
         if self.demo:
@@ -343,6 +346,18 @@ class App:
         return {"gym": gym, "bin_minutes": bin_minutes, "now": now,
                 "weeks": self.cfg.history_weeks, "days": days, "excluded": excluded}
 
+    def api_accuracy(self, _q) -> dict:
+        """Echte Prognosegüte aus den Schnappschuss-CSVs, hoechstens alle 10 Minuten neu."""
+        if self.demo:
+            return empty_result(self.now())
+        now = self.now()
+        if self._accuracy is not None and now - self._accuracy[0] < 600:
+            return self._accuracy[1]
+        snap_dir = Path(self.cfg.db_path).parent / "forecasts"
+        res = evaluate(snap_dir, self.store, self.tz, now)
+        self._accuracy = (now, res)
+        return res
+
     def api_collect(self, _q) -> dict:
         if self.demo or self.collector is None:
             return {"ok": False, "error": "Im Demo-Modus wird nichts abgerufen."}
@@ -411,6 +426,8 @@ def make_handler(app: App):
                     self._json(app.api_gym(q))
                 elif method == "GET" and url.path == "/api/weekly":
                     self._json(app.api_weekly(q))
+                elif method == "GET" and url.path == "/api/accuracy":
+                    self._json(app.api_accuracy(q))
                 elif method == "POST" and url.path == "/api/collect":
                     self._json(app.api_collect(q))
                 elif method == "GET" and url.path == "/api/export.csv":

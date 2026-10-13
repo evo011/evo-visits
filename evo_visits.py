@@ -26,7 +26,7 @@ from evo.store import Store
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
     ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "export",
-                                        "export-csv", "import-csv", "launchd"])
+                                        "export-csv", "import-csv", "evaluate", "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
@@ -106,7 +106,8 @@ def main(argv: list[str]) -> int:
         from evo.static_export import export_site
         store = Store(cfg.db_path)
         out_dir = args.out or (PROJECT_DIR / "site")
-        res = export_site(cfg, store, out_dir, ctx=Context(store, cfg))
+        snap_dir = args.forecast_snapshot or (Path(cfg.db_path).parent / "forecasts")
+        res = export_site(cfg, store, out_dir, ctx=Context(store, cfg), snapshot_dir=snap_dir)
         print(f"{res['gyms']} Clubs, {res['files']} Dateien nach {res['out']} geschrieben")
         if args.forecast_snapshot and not res["app"].demo:
             try:
@@ -139,6 +140,29 @@ def main(argv: list[str]) -> int:
         wn = import_weather_dir(store, directory)
         print(f"{n} Zeilen eingelesen aus {directory}")
         print(f"{wn} Wetterzeilen eingelesen aus {directory}")
+    elif args.command == "evaluate":
+        from evo.evaluate import evaluate
+        from evo.forecast import get_tz
+        store = Store(cfg.db_path)
+        snap_dir = args.dir or (DATA_DIR / "forecasts")
+        res = evaluate(snap_dir, store, get_tz(cfg.timezone), int(time.time()))
+        if not res["all"]:
+            print("Keine auswertbaren Prognosen gefunden.")
+            return 0
+        labels = {"same_day": "am selben Tag", "1d": "einen Tag vorher",
+                  "2_3d": "2–3 Tage vorher", "4_7d": "4–7 Tage vorher"}
+        def de(v):
+            return None if v is None else f"{v:.1f}".replace(".", ",")
+        for group in res["buckets"]:
+            m = res["all"].get(group)
+            if not m:
+                continue
+            line = (f"{labels[group]}: {m['n']} Werte, ±{de(m['mae'])} daneben, "
+                    f"Band {m['coverage_pct']} %")
+            if m.get("mae_last_week") is not None:
+                line += f", Vorwoche ±{de(m['mae_last_week'])}"
+            print(line)
+        print(f"{res['days']} Tage Prognosen ausgewertet (seit {res['first_made']}).")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))

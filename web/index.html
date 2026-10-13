@@ -474,6 +474,7 @@ footer a { color: var(--ink-2); text-decoration: underline; }
       <div class="tablewrap"><table id="fxTable"></table></div>
       <h3>Prüfung (Backtest)</h3>
       <div id="fxBacktest"></div>
+      <div id="fxAccuracy"></div>
       <h3>Datenquellen</h3>
       <div id="fxSources"></div>
     </details>
@@ -512,7 +513,7 @@ function loadBest() {
 }
 const state = {
   gym: null, days: store.get("days", 7), horizon: store.get("horizon", 24),
-  best: loadBest(), status: null, gyms: [], data: null, weekly: null, bandDay: null,
+  best: loadBest(), status: null, gyms: [], data: null, weekly: null, bandDay: null, accuracy: null,
 };
 
 const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -585,6 +586,7 @@ function staticPath(path) {
     if (!entry) throw new Error("unbekannter Club");
     return bust(`api/weekly/${entry.slug}.json`);
   }
+  if (u.pathname === "/api/accuracy") return bust("api/accuracy.json");
   throw new Error("Im Static-Export nicht verfügbar: " + u.pathname);
 }
 
@@ -611,6 +613,51 @@ async function api(path, opts) {
     }
   }
   return data;
+}
+
+function renderAccuracy() {
+  const box = $("#fxAccuracy");
+  box.textContent = "";
+  const a = state.accuracy;
+  if (!a || !a.days || !a.first_made) {
+    box.append(el("p", { class: "fx-line" }, "Echte Prognosegüte: Die erste Auswertung erscheint, sobald ein gespeicherter Prognosetag vorbei ist."));
+    return;
+  }
+  const perGym = (a.by_gym && a.by_gym[state.gym]) || null;
+  let groups = perGym, suffix = "";
+  if (!perGym || Object.values(perGym).reduce((s, m) => s + (m.n || 0), 0) < 20) {
+    groups = a.all || {};
+    suffix = " (alle Clubs)";
+  }
+  const labels = { same_day: "am selben Tag", "1d": "einen Tag vorher", "2_3d": "2–3 Tage vorher", "4_7d": "4–7 Tage vorher" };
+  const since = Number(a.first_made.slice(8, 10)) + "." + Number(a.first_made.slice(5, 7)) + ".";
+  const p = el("p", { class: "fx-line" });
+  p.append(el("b", {}, "Echte Prognosegüte"));
+  const parts = [];
+  for (const g of a.buckets || []) {
+    const m = groups[g];
+    if (m) parts.push(`${labels[g]} ±${nf(m.mae, 1)}`);
+  }
+  const unit = state.data ? unitLabel(state.data.unit) : "Personen";
+  p.append(document.createTextNode(`: Gespeicherte Prognosen seit ${since} (${nf(a.days)} Tage): ${parts.join(", ")} ${unit} daneben${suffix}.`));
+  box.append(p);
+  let covN = 0, covH = 0, lwN = 0, lwErr = 0, modelErr = 0;
+  for (const m of Object.values(groups)) {
+    covN += (m.n || 0);
+    covH += Math.round((m.coverage_pct || 0) * (m.n || 0) / 100);
+    if (m.mae_last_week != null) {
+      lwN += (m.n_last_week || 0);
+      lwErr += (m.mae_last_week || 0) * (m.n_last_week || 0);
+      modelErr += (m.mae_model_same || 0) * (m.n_last_week || 0);
+    }
+  }
+  if (covN) {
+    const covPct = Math.round(100 * covH / covN);
+    box.append(el("p", { class: "fx-line" }, `Das Band traf ${nf(covPct)} % der Messwerte (Ziel 80 %).`));
+    if (lwN) {
+      box.append(el("p", { class: "fx-line" }, `„Wie Vorwoche“ lag auf denselben Zeitpunkten bei ±${nf(lwErr / lwN, 1)}, das Modell bei ±${nf(modelErr / lwN, 1)}.`));
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1638,6 +1685,7 @@ function renderBestCard() {
 }
 
 function renderAll() {
+  renderAccuracy();
   if (!state.data) return;
   renderLead(); renderBand(); renderForecast(); renderEffects(); renderHistory(); renderHeat(); renderBestCard(); renderOverview();
 }
@@ -1675,6 +1723,8 @@ async function refresh(full = true) {
       [status, gyms] = await Promise.all([api("/api/status"), api("/api/gyms")]);
     }
     state.status = status; state.gyms = gyms;
+    try { state.accuracy = await api("/api/accuracy"); }
+    catch (e) { console.error(e); state.accuracy = null; }
   } catch (e) { console.error(e); return; }
   renderStatus();
   const has = state.gyms.length > 0;

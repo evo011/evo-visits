@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from .config import WEB_DIR, Config
+from .evaluate import empty_result, evaluate
 from .server import App
 from .store import Store
 
@@ -80,8 +81,8 @@ def _copy_fonts(out_dir: Path, written: list) -> None:
             written.append(target)
 
 
-def export_site(cfg: Config, store: Store, out_dir: Path,
-                ctx=None, now: Optional[int] = None) -> dict:
+def export_site(cfg: Config, store: Store, out_dir: Path, ctx=None,
+                now: Optional[int] = None, snapshot_dir: Optional[Path] = None) -> dict:
     """Alle API-Endpunkte als Dateien nach out_dir schreiben und index.html dazulegen.
 
     Kein Netz-Abruf: frische Kontextdaten liefert vorher 'python3 evo_visits.py context'.
@@ -120,6 +121,12 @@ def export_site(cfg: Config, store: Store, out_dir: Path,
 
     (out_dir / "api" / "export.csv").write_bytes(app.export_csv())
     written.append(out_dir / "api" / "export.csv")
+
+    if app.demo or snapshot_dir is None:
+        accuracy = empty_result(generated_at)
+    else:
+        accuracy = evaluate(snapshot_dir, store, app.tz, generated_at)
+    _write(out_dir / "api" / "accuracy.json", _dump(accuracy), written)
 
     _cleanup_old(out_dir, "gym", gym_keep)
     _cleanup_old(out_dir, "weekly", weekly_keep)
