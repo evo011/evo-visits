@@ -27,6 +27,7 @@ except ImportError:  # pragma: no cover
     ZoneInfo = None  # type: ignore
 
 SHRINK_K = 1.0          # Gewicht des Priors (in "aktuellen Beobachtungen")
+POOL_K = 2.0            # Gewicht des Pool-Priors gegenueber dem eigenen Profil
 NOWCAST_TAU_MIN = 120   # Abklingzeit der Tageskorrektur
 NOWCAST_LOOKBACK_MIN = 45
 
@@ -56,16 +57,45 @@ def _wstats(obs: list[tuple[float, float]]) -> Optional[Stat]:
     return Stat(m, math.sqrt(var), w)
 
 
+def _collect_observations(binned: dict[tuple[date, int], float],
+                          day_kind: Callable[[date], int],
+                          today: date, half_life_days: float, slots: int
+                          ) -> tuple[dict, dict, dict, set]:
+    """Beobachtungen je (Tagesart, Slot), (Wochenende?, Slot) und Slot sammeln.
+
+    Nur Daten vor `today`; Altersgewicht mit Halbwertszeit, Nachbar-Slots +/-1
+    mit Faktor 0.5. Rueckgabe: (by_wd, by_type, by_all, days_seen).
+    """
+    by_wd: dict[tuple[int, int], list[tuple[float, float]]] = defaultdict(list)
+    by_type: dict[tuple[bool, int], list[tuple[float, float]]] = defaultdict(list)
+    by_all: dict[int, list[tuple[float, float]]] = defaultdict(list)
+    days_seen: set[date] = set()
+    for (d, s), v in binned.items():
+        if d >= today:
+            continue
+        days_seen.add(d)
+        w = 0.5 ** ((today - d).days / half_life_days)
+        for ds, f in ((0, 1.0), (-1, 0.5), (1, 0.5)):
+            ss = s + ds
+            if 0 <= ss < slots:
+                by_wd[(day_kind(d), ss)].append((v, w * f))
+                by_type[(day_kind(d) >= 5, ss)].append((v, w * f))
+                by_all[ss].append((v, w * f))
+    return by_wd, by_type, by_all, days_seen
+
+
 class Profile:
     def __init__(self, series: list[tuple[int, float]], tz: tzinfo, now_ts: Optional[int] = None,
                  bin_minutes: int = 15, half_life_days: float = 21.0,
                  day_kind: Optional[Callable[[date], int]] = None,
-                 binned: Optional[dict[tuple[date, int], float]] = None):
+                 binned: Optional[dict[tuple[date, int], float]] = None,
+                 pool_prior: Optional[Callable[[int, int], Optional[Stat]]] = None):
         self.tz = tz
         self.bin = bin_minutes
         self.slots = 24 * 60 // bin_minutes
         self.now_ts = now_ts or int(time.time())
         self.day_kind = day_kind or (lambda d: d.weekday())
+        self.pool_prior = pool_prior
         today = datetime.fromtimestamp(self.now_ts, tz).date()
 
         # 1. pro (Datum, Slot) mitteln; vorgegebene Werte uebernehmen statt series
@@ -80,21 +110,8 @@ class Profile:
 
         # 2. Beobachtungen je (Tagesart, Slot) mit Altersgewicht; der heutige Tag bleibt aussen vor,
         #    er wird ueber die Tageskorrektur beruecksichtigt.
-        self.by_wd: dict[tuple[int, int], list[tuple[float, float]]] = defaultdict(list)
-        self.by_type: dict[tuple[bool, int], list[tuple[float, float]]] = defaultdict(list)
-        self.by_all: dict[int, list[tuple[float, float]]] = defaultdict(list)
-        self.days_seen: set[date] = set()
-        for (d, s), v in self.binned.items():
-            if d >= today:
-                continue
-            self.days_seen.add(d)
-            w = 0.5 ** ((today - d).days / half_life_days)
-            for ds, f in ((0, 1.0), (-1, 0.5), (1, 0.5)):
-                ss = s + ds
-                if 0 <= ss < self.slots:
-                    self.by_wd[(self.day_kind(d), ss)].append((v, w * f))
-                    self.by_type[(self.day_kind(d) >= 5, ss)].append((v, w * f))
-                    self.by_all[ss].append((v, w * f))
+        self.by_wd, self.by_type, self.by_all, self.days_seen = _collect_observations(
+            self.binned, self.day_kind, today, half_life_days, self.slots)
         self._cache: dict[tuple[int, int], Optional[Stat]] = {}
 
     def slot_of(self, dt: datetime) -> int:
@@ -108,6 +125,11 @@ class Profile:
         typ = _wstats(self.by_type.get((weekday >= 5, slot), []))
         allx = _wstats(self.by_all.get(slot, []))
         prior = typ or allx
+        prior_k = SHRINK_K
+        if self.pool_prior is not None:
+            pooled = self.pool_prior(weekday, slot)
+            if pooled is not None:
+                prior, prior_k = pooled, POOL_K
         if same is None and prior is None:
             res = None
         elif same is None:
@@ -116,7 +138,7 @@ class Profile:
             res = same
         else:
             w = same.weight
-            mean = (w * same.mean + SHRINK_K * prior.mean) / (w + SHRINK_K)
+            mean = (w * same.mean + prior_k * prior.mean) / (w + prior_k)
             std = same.std if same.weight >= 1.5 else max(same.std, prior.std)
             res = Stat(mean, std, w)
         self._cache[key] = res
