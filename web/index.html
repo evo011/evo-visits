@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+try {
+  var t = JSON.parse(localStorage.getItem("evo.theme"));
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
 <meta name="color-scheme" content="light dark">
 <title>EVO Auslastung</title>
 <meta name="theme-color" content="#151617" media="(prefers-color-scheme: dark)">
@@ -68,6 +74,7 @@
     --plate-red: #ee5a46;
   }
 }
+:root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] {
   color-scheme: dark;
   --chalk: #151617;
@@ -111,6 +118,8 @@ header {
 #stand { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
 #stand.err { color: var(--plate-red); }
 .hd-right a { color: var(--ink-2); font-size: 13px; text-decoration: underline; }
+#themeSel { font-size: 13px; font-weight: 500; color: var(--ink-2); min-height: 32px; padding: 0 26px 0 10px; background-position: right 8px center; }
+@media (pointer: coarse) { #themeSel { font-size: 16px; min-height: 40px; } }
 @media (max-width: 559px) {
   #stand.demo { display: none; }
   .noword { display: none; }
@@ -338,6 +347,11 @@ footer { font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--steel
       <div class="hd-right">
         <span id="stand"></span>
         <a id="collectBtn" href="#" title="Sofort einen Abruf starten"><span class="noword">Jetzt </span>abrufen</a>
+        <select id="themeSel" aria-label="Darstellung">
+          <option value="auto">Auto</option>
+          <option value="light">Hell</option>
+          <option value="dark">Dunkel</option>
+        </select>
         <a href="/api/export.csv" download>CSV</a>
       </div>
     </div>
@@ -1709,8 +1723,38 @@ function setPressed(seg, attr, value) {
   seg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset[attr]) === value)));
 }
 
+function currentTheme() {
+  const t = store.get("theme", "auto");
+  return t === "light" || t === "dark" ? t : "auto";
+}
+function syncThemeMeta(mode) {
+  document.querySelector('meta[name="color-scheme"]').setAttribute("content", mode === "auto" ? "light dark" : mode);
+  let meta = document.getElementById("themeColorForced");
+  if (mode === "auto") {
+    if (meta) meta.remove();
+    return;
+  }
+  if (!meta) {
+    meta = el("meta", { name: "theme-color", id: "themeColorForced" });
+    document.head.append(meta);
+  }
+  meta.setAttribute("content", mode === "light" ? "#f4f4f1" : "#151617");
+}
+function applyTheme(mode) {
+  if (mode !== "light" && mode !== "dark") mode = "auto";
+  if (mode === "auto") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = mode;
+  store.set("theme", mode);
+  syncThemeMeta(mode);
+  renderAll();
+}
+
 function initControls() {
   $("#gymSel").addEventListener("change", (e) => { const v = e.target.value; if (v) selectGym(v); });
+  const themeSel = $("#themeSel");
+  themeSel.value = currentTheme();
+  syncThemeMeta(themeSel.value);
+  themeSel.addEventListener("change", () => applyTheme(themeSel.value));
   const rs = $("#rangeSeg"), hs = $("#horizonSeg");
   setPressed(rs, "days", state.days); setPressed(hs, "h", state.horizon);
   rs.addEventListener("click", (e) => {
@@ -1761,7 +1805,7 @@ function initControls() {
   });
   let rt;
   new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (state.data) { renderForecast(); renderBand(); renderHistory(); } }, 120); }).observe($("#app"));
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderAll);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (currentTheme() === "auto") renderAll(); });
 }
 
 initControls();
