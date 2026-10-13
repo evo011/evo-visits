@@ -639,7 +639,8 @@ function renderAccuracy() {
     if (m) parts.push(`${labels[g]} ±${nf(m.mae, 1)}`);
   }
   const unit = state.data ? unitLabel(state.data.unit) : "Personen";
-  p.append(document.createTextNode(`: Gespeicherte Prognosen seit ${since} (${nf(a.days)} Tage): ${parts.join(", ")} ${unit} daneben${suffix}.`));
+  const daysLabel = a.days === 1 ? "1 Tag" : `${nf(a.days)} Tage`;
+  p.append(document.createTextNode(`: Gespeicherte Prognosen seit ${since} (${daysLabel}): ${parts.join(", ")} ${unit} daneben${suffix}.`));
   box.append(p);
   let covN = 0, covH = 0, lwN = 0, lwErr = 0, modelErr = 0;
   for (const m of Object.values(groups)) {

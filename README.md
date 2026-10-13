@@ -57,6 +57,7 @@ python3 evo_visits.py export-csv                 # Monats-CSVs (Besucher, Wetter
 python3 evo_visits.py import-csv                 # Monats-CSVs aus data/ einlesen
 python3 evo_visits.py export --out site          # statische Seite bauen
 python3 evo_visits.py export --out site --forecast-snapshot data/forecasts   # dazu Prognose-Schnappschuss (einmal pro Tag)
+python3 evo_visits.py evaluate                   # echte Prognosegüte aus den Schnappschüssen
 ```
 
 ## Daten im Repo
@@ -83,15 +84,17 @@ Logs landen in `data/server.log`. Schläft der Laptop, entstehen Lücken, deshal
 
 ## Wie die Prognose funktioniert
 
-Bewusst nachvollziehbar statt Blackbox, alles in `evo/forecast.py`, `evo/effects.py` und `evo/model.py`.
+Bewusst nachvollziehbar statt Blackbox, alles in `evo/forecast.py`, `evo/pool.py`, `evo/effects.py` und `evo/model.py`.
 
-1. **Wochenprofil.** Messwerte werden in 15-Minuten-Slots gemittelt. Für jeden Wochentag und Slot entsteht ein typischer Wert. Jüngere Wochen zählen mehr (Halbwertszeit 21 Tage), Nachbar-Slots fließen halb ein. Bei wenig Daten wird zum Profil aller Werktage bzw. Wochenendtage geschrumpft.
-2. **Feiertage** zählen als Sonntag, beim Lernen und bei der Prognose.
-3. **Effekte** wirken multiplikativ auf das Profil: Prognose = (Profil + 3) · e^(x·β) − 3. Geschätzt per Ridge-Regression (λ = 10) auf log((v + 3)/(s + 3)) mit den Merkmalen Regen (mm/h, gesättigt bei 1), Wärme über 18 °C und Kälte unter 8 °C (je 10 °C), Sonnenanteil der Stunde, Schulferientag und Brückentag. Ein Effekt gilt erst ab genug Tagen, an denen er auftritt (Wetter 4, Schulferien 3, Brückentage 2), vorher bleibt er 0.
-4. **Backfitting.** Effekte schätzen, Messwerte um sie bereinigen, Profil neu bauen, zweimal. So beschreibt das Profil Normalbedingungen und nicht „die Woche, in der es oft geregnet hat“.
-5. **Nowcast.** Ist der Club gerade voller oder leerer als vorhergesagt, wird die Abweichung fortgeschrieben und klingt mit zwei Stunden Zeitkonstante ab.
-6. **Band (80 %).** Zusammengesetzt aus der Reststreuung je Stunde nach Abzug der Effekte, der Unsicherheit der Effekte selbst (Tages-Block-Bootstrap), einer Wetter-Unsicherheit, die mit der Vorlaufzeit bis 4 Tage wächst, und einem Zuschlag an Feiertagen, solange wenige davon in den Daten sind. An normalen Tagen wird das Band dadurch schmaler, bei unsicheren Lagen breiter.
-7. **Backtest.** Die letzten 7 Tage werden mit dem jeweils vorher bekannten Wissen nachgerechnet: Modell mit Effekten, reines Wochenprofil und „gleiche Uhrzeit Vorwoche“. Helfen die Effekte nicht, werden sie abgeschaltet. Das Dashboard zeigt alle drei Fehler und die Trefferquote des Bands. Der Backtest nutzt gemessenes statt vorhergesagtes Wetter und ist damit etwas zu optimistisch. Die ehrliche Messung liefern die täglichen Prognose-Schnappschüsse in `data/forecasts/`.
+1. **Wochenprofil.** Messwerte werden in 15-Minuten-Slots gemittelt. Für jeden Wochentag und Slot entsteht ein typischer Wert. Jüngere Wochen zählen mehr (Halbwertszeit 21 Tage), Nachbar-Slots fließen halb ein.
+2. **Alle Clubs lernen gemeinsam.** Jeder Club ist sein eigenes Niveau mal einer gemeinsamen Tagesform („Unterbilk ist etwa 1,3-mal so voll wie der Schnitt“). Niveaus und Form werden abwechselnd aus allen Clubs geschätzt (`evo/pool.py`). Das eigene Profil eines Clubs wird zur gemeinsamen Form mal seinem Niveau hin geschrumpft, die gemeinsame Form zählt dabei wie zwei eigene Beobachtungen. Mit wenigen Wochen Daten prägt sie das Profil stark, später setzen sich die Eigenheiten des Clubs durch.
+3. **Feiertage** zählen als Sonntag, beim Lernen und bei der Prognose, je Bundesland des Clubs.
+4. **Effekte** wirken multiplikativ auf das Profil: Prognose = (Profil + 3) · e^(x·β) − 3. Geschätzt per Ridge-Regression (λ = 10) auf log((v + 3)/(s + 3)) mit den Merkmalen Regen (mm/h, gesättigt bei 1), Wärme über 18 °C und Kälte unter 8 °C (je 10 °C), Sonnenanteil der Stunde, Schulferientag und Brückentag. Die Effekte werden einmal gemeinsam über alle Clubs geschätzt, jeder Club gegen sein eigenes Profil. Ein Effekt gilt erst ab genug Tagen, an denen er auftritt (Wetter 4, Schulferien 3, Brückentage 2), gezählt je Stadt und Datum: Regen in Hamburg und Köln am selben Tag sind zwei Tage. Vorher bleibt er 0.
+5. **Backfitting.** Effekte schätzen, Messwerte um sie bereinigen, Profile neu bauen, zweimal. So beschreibt das Profil Normalbedingungen und nicht „die Woche, in der es oft geregnet hat“.
+6. **Nowcast.** Ist der Club gerade voller oder leerer als vorhergesagt, wird die Abweichung fortgeschrieben und klingt mit zwei Stunden Zeitkonstante ab.
+7. **Band (80 %).** Zusammengesetzt aus der Reststreuung je Stunde nach Abzug der Effekte, der Unsicherheit der Effekte selbst (Tages-Block-Bootstrap), einer Wetter-Unsicherheit, die mit der Vorlaufzeit bis 4 Tage wächst, und einem Zuschlag an Feiertagen, solange wenige davon in den Daten sind. An normalen Tagen wird das Band dadurch schmaler, bei unsicheren Lagen breiter.
+8. **Backtest.** Die letzten 7 Tage werden mit dem jeweils vorher bekannten Wissen nachgerechnet (ab 7 Tagen Vorlauf je Club): gemeinsames Modell mit Effekten, gemeinsames Modell ohne Effekte („nur Wochenprofil“), das frühere Einzelmodell nur aus den Daten des Clubs („nur eigene Daten“) und „gleiche Uhrzeit Vorwoche“. Helfen die Effekte über alle Clubs zusammen nicht, werden sie abgeschaltet. Das Dashboard zeigt alle Fehler und die Trefferquote des Bands. Der Backtest nutzt gemessenes statt vorhergesagtes Wetter und ist damit etwas zu optimistisch.
+9. **Echte Prognosegüte.** `evo/evaluate.py` vergleicht die täglichen Schnappschüsse in `data/forecasts/` mit den später gemessenen Werten: mittlerer Fehler, Verzerrung und Trefferquote des Bands je Vorlauf (am selben Tag, 1 Tag, 2–3 Tage, 4–7 Tage vorher), dazu „wie Vorwoche“ auf denselben Zeitpunkten. Getrennt nach Club und nach Modellversion (`model` = Commit), so lässt sich jede Änderung am Modell an echten Prognosen messen. Auf der Seite steht das Ergebnis in der Karte „Was die Auslastung beeinflusst“, auf der Kommandozeile per `python3 evo_visits.py evaluate`, statisch als `api/accuracy.json`.
 
 Die Karte „Was die Auslastung beeinflusst“ zeigt je Effekt Wirkung, 80-%-Spanne, Datenbasis und Status sowie den Stand der Datenquellen.
 
@@ -124,6 +127,8 @@ Optionen mit Defaults stehen in `evo/config.py`, eigene Werte in `config.json` (
 | `evo/static_export.py` | statische Seite für GitHub Pages |
 | `evo/csvstore.py` | Monats-CSVs für Besucher und Wetter |
 | `evo/snapshot.py` | täglicher Prognose-Schnappschuss |
+| `evo/pool.py` | gemeinsame Tagesform und Niveaus aller Clubs |
+| `evo/evaluate.py` | echte Prognosegüte aus den Schnappschüssen |
 | `evo/demo.py` | Demo-Daten |
 | `web/index.html` | Dashboard (eigene SVG-Charts, hell und dunkel) |
 
