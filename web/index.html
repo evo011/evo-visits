@@ -517,6 +517,7 @@ const state = {
 };
 
 const nf = (v, d = 0) => v == null || Number.isNaN(v) ? "–" : Number(v).toLocaleString("de-DE", { maximumFractionDigits: d, minimumFractionDigits: 0 });
+const dayCount = (n) => n === 1 ? "1 Tag" : `${nf(n)} Tage`;
 const unitLabel = (u) => u === "percent" ? "%" : "Personen";
 const fmtTime = (ms) => new Date(ms).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
 const fmtDay = (ms) => { const d = new Date(ms); return WD[(d.getDay() + 6) % 7] + " " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }); };
@@ -639,7 +640,7 @@ function renderAccuracy() {
     if (m) parts.push(`${labels[g]} ±${nf(m.mae, 1)}`);
   }
   const unit = state.data ? unitLabel(state.data.unit) : "Personen";
-  const daysLabel = a.days === 1 ? "1 Tag" : `${nf(a.days)} Tage`;
+  const daysLabel = dayCount(a.days);
   p.append(document.createTextNode(`: Gespeicherte Prognosen seit ${since} (${daysLabel}): ${parts.join(", ")} ${unit} daneben${suffix}.`));
   box.append(p);
   let covN = 0, covH = 0, lwN = 0, lwErr = 0, modelErr = 0;
@@ -1290,7 +1291,7 @@ const fxPct = (v) => v == null ? "–" : v >= 0.5 ? `+${nf(v)} %` : v <= -0.5 ? 
 function renderEffects() {
   const d = state.data, e = d.effects || {};
   const city = (d.location && d.location.city) || state.gym;
-  $("#fxSub").textContent = `Geschätzt aus den eigenen Messwerten in ${city}, multiplikativ auf das typische Wochenprofil. Ein Effekt zählt erst ab genug Tagen mit diesem Wetter oder Kalendertag.`;
+  $("#fxSub").textContent = `Gemeinsam geschätzt aus den Messwerten aller Clubs, multiplikativ auf das typische Wochenprofil. Wetter und Ferien gelten für ${city}. Ein Effekt zählt erst ab genug Tagen mit diesem Wetter oder Kalendertag.`;
   const t = $("#fxTable");
   t.textContent = "";
   const thead = el("thead"), hr = el("tr");
@@ -1318,7 +1319,7 @@ function renderEffects() {
     tr.append(td0);
     tr.append(el("td", { class: "num" }, f && f.status === "aktiv" ? fxPct(f.effect_pct) : "–"));
     tr.append(el("td", { class: "num hide-sm nw" }, spanOf(f)));
-    tr.append(el("td", { class: "num hide-sm" }, f ? `${f.active_days} Tage (ab ${f.min_days})` : "–"));
+    tr.append(el("td", { class: "num hide-sm" }, f ? `${dayCount(f.active_days)} (ab ${f.min_days})` : "–"));
     const tds = el("td");
     const sc = !f ? "" : f.status === "aktiv" ? "spill on" : f.status === "zu wenig Daten" ? "spill off" : "spill bad";
     tds.append(el("span", sc ? { class: sc } : {}, f ? f.status : "–"));
@@ -1346,7 +1347,7 @@ function renderEffects() {
   const bt = d.backtest;
   if (bt) {
     const p = el("p", { class: "fx-line" });
-    p.append(document.createTextNode(`Letzte ${bt.days} Tage nachgerechnet: `));
+    p.append(document.createTextNode(`${bt.days === 1 ? "Letzter Tag" : `Letzte ${nf(bt.days)} Tage`} nachgerechnet: `));
     const items = [["Modell", bt.mae_model]];
     if (bt.mae_own != null) items.push(["nur eigene Daten", bt.mae_own]);
     items.push(["nur Wochenprofil", bt.mae_profile], ["„wie Vorwoche“", bt.mae_last_week]);
@@ -1458,7 +1459,7 @@ function renderHeat() {
     });
   });
   $("#heatMax").textContent = nf(max) + (d.unit === "percent" ? " %" : " Personen");
-  $("#heatSub").textContent = `Durchschnitt je Wochentag und Stunde, letzte ${d.n_days} Tage`;
+  $("#heatSub").textContent = `Durchschnitt je Wochentag und Stunde, ${d.n_days === 1 ? "letzter Tag" : `letzte ${nf(d.n_days)} Tage`}`;
   table($("#heatTable .tablewrap"), ["Stunde", ...WD], HEAT_HOURS.map((h) => [`${h}–${h + 1}`, ...d.heatmap.map((r) => r[h] == null ? "–" : nf(r[h]))]));
 }
 
