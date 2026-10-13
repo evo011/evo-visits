@@ -37,6 +37,8 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--active-hours", help="Aktives Fenster als HH:MM-HH:MM (ueberschreibt config)")
     ap.add_argument("--dir", type=Path, help="Verzeichnis fuer CSV-Export/-Import (Default: data/)")
     ap.add_argument("--out", type=Path, help="Ausgabeverzeichnis fuer 'export' (Default: site/)")
+    ap.add_argument("--forecast-snapshot", type=Path,
+                    help="export: zusaetzlich Prognose-Schnappschuss in dieses Verzeichnis")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -100,26 +102,43 @@ def main(argv: list[str]) -> int:
                     print(f"  {source}: FEHLER, {r['error']}")
     elif args.command == "export":
         from evo.context import Context
+        from evo.snapshot import snapshot_forecasts
         from evo.static_export import export_site
         store = Store(cfg.db_path)
         out_dir = args.out or (PROJECT_DIR / "site")
         res = export_site(cfg, store, out_dir, ctx=Context(store, cfg))
         print(f"{res['gyms']} Clubs, {res['files']} Dateien nach {res['out']} geschrieben")
+        if args.forecast_snapshot and not res["app"].demo:
+            try:
+                path = snapshot_forecasts(res["app"], args.forecast_snapshot, res["app"].now())
+            except Exception as e:
+                print(f"Prognose-Schnappschuss fehlgeschlagen: {e}", file=sys.stderr)
+                return 0
+            if path:
+                print(f" Prognose-Schnappschuss: {path}")
+            else:
+                print(" Kein neuer Prognose-Schnappschuss (heute schon vorhanden oder keine Punkte).")
     elif args.command == "export-csv":
-        from evo.csvstore import export_monthly
+        from evo.csvstore import export_monthly, export_weather_monthly
         from evo.forecast import get_tz
         directory = args.dir or DATA_DIR
-        changed = export_monthly(Store(cfg.db_path), directory, get_tz(cfg.timezone))
+        store = Store(cfg.db_path)
+        tz = get_tz(cfg.timezone)
+        changed = export_monthly(store, directory, tz)
+        changed += export_weather_monthly(store, directory, tz, int(time.time()))
         if changed:
             for p in changed:
                 print(f" geschrieben: {p}")
         else:
             print("Keine Änderungen, keine Dateien geschrieben.")
     elif args.command == "import-csv":
-        from evo.csvstore import import_dir
+        from evo.csvstore import import_dir, import_weather_dir
         directory = args.dir or DATA_DIR
-        n = import_dir(Store(cfg.db_path), directory)
+        store = Store(cfg.db_path)
+        n = import_dir(store, directory)
+        wn = import_weather_dir(store, directory)
         print(f"{n} Zeilen eingelesen aus {directory}")
+        print(f"{wn} Wetterzeilen eingelesen aus {directory}")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))

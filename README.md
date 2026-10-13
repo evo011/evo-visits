@@ -30,8 +30,8 @@ Das Repo ist öffentlich und enthält nur Code und Besucherzahlen, keine Secrets
 - `.github/workflows/collect.yml` setzt sich selbst fort: Der letzte Job jedes Laufs (`chain`) wartet bis zur nächsten vollen Viertelstunde (:00, :15, :30, :45) und startet den Workflow dann per `workflow_dispatch` neu. Das eingebaute `GITHUB_TOKEN` darf das, ein eigenes Token ist nicht nötig. Nachts schläft die Kette bis 05:45 Uhr (höchstens 5 Stunden am Stück, Grenze für Job-Laufzeiten). Ein nachts per Hand gestarteter Lauf wartet so lange; wer sofort deployen will, bricht den schlafenden Lauf ab (`gh run cancel`, notfalls `force-cancel` über die API). Laufen oder warten schon andere Läufe, setzt sie keinen neuen an, so entstehen keine doppelten Ketten.
 - Der Cron `0,15,30,45 3-22 * * *` ist nur Reserve, falls die Kette abreißt. GitHubs Cron-Trigger hat am 12.10.2026 über eine Stunde lang nicht ausgelöst, deshalb die Kette. Cron rechnet in UTC, die Stunden 3–22 decken 5:45–23:15 Uhr Berliner Zeit in Sommer- und Winterzeit ab. Das genaue Fenster (05:45–23:15 Berlin) prüft das Skript selbst (`collect --respect-window`). Eine concurrency-Gruppe verhindert überlappende Läufe.
 - Reißt die Kette ab und der Cron springt nicht an, genügt ein Start per Hand: `gh workflow run collect.yml -R evo011/evo-visits`.
-- Ablauf je Lauf: Monats-CSVs einlesen, abrufen, Wetter und Ferien auffrischen, `data/visits-YYYY-MM.csv` committen, statische Seite bauen (`export --out site`) und per `actions/deploy-pages` veröffentlichen.
-- Die CSVs sind die Quelle der Wahrheit. `data/visits.db` (SQLite) kommt nicht ins Git, sondern liegt im Actions-Cache, damit Wetter und Ferien nicht bei jedem Lauf neu geholt werden.
+- Ablauf je Lauf: Monats-CSVs einlesen, abrufen, Wetter und Ferien auffrischen, Monats-CSVs schreiben, statische Seite bauen (`export --out site`, beim ersten Lauf des Tages mit Prognose-Schnappschuss), CSVs committen und die Seite per `actions/deploy-pages` veröffentlichen.
+- Die CSVs sind die Quelle der Wahrheit (siehe „Daten im Repo“). `data/visits.db` (SQLite) kommt nicht ins Git, sondern liegt im Actions-Cache, damit Wetter und Ferien nicht bei jedem Lauf neu geholt werden. Räumt GitHub den Cache, baut der nächste Lauf die Datenbank aus den CSVs wieder auf.
 - Schlägt der EVO-Abruf fehl, wird die Seite trotzdem mit dem letzten Stand deployt und der Lauf rot markiert.
 - `.github/workflows/probe.yml` (manuell) prüft, ob EVO, Open-Meteo und OpenHolidays vom Runner aus erreichbar sind.
 - In den Repo-Einstellungen muss unter Pages die Quelle „GitHub Actions“ gewählt sein.
@@ -53,10 +53,23 @@ Weitere Kommandos:
 ```bash
 python3 evo_visits.py collect --respect-window   # einmal abrufen (für cron)
 python3 evo_visits.py context                    # Wetter und Ferien sofort neu holen
-python3 evo_visits.py export-csv                 # Monats-CSVs nach data/ schreiben
+python3 evo_visits.py export-csv                 # Monats-CSVs (Besucher, Wetter) nach data/ schreiben
 python3 evo_visits.py import-csv                 # Monats-CSVs aus data/ einlesen
 python3 evo_visits.py export --out site          # statische Seite bauen
+python3 evo_visits.py export --out site --forecast-snapshot data/forecasts   # dazu Prognose-Schnappschuss (einmal pro Tag)
 ```
+
+## Daten im Repo
+
+Alles, was für spätere Auswertungen zählt, liegt als Monats-CSV in `data/` und wird von jedem Lauf mitcommittet. Nichts davon wird gelöscht.
+
+| Datei | Inhalt | Umfang |
+|---|---|---|
+| `data/visits-YYYY-MM.csv` | jeder Abruf: `ts,local_time,gym,count,capacity,pct` | 15 Clubs alle 15 min, etwa 32.000 Zeilen im Monat |
+| `data/weather-YYYY-MM.csv` | gemessenes Wetter je Stadt und Stunde: `ts,local_time,loc,temp,precip,sunshine,code` (nur vergangene Stunden) | 7 Städte, etwa 5.000 Zeilen im Monat |
+| `data/forecasts/forecast-YYYY-MM.csv` | Schnappschuss der eigenen 7-Tage-Prognose, einmal pro Tag: `made_date,made_ts,gym,target_ts,target_local,lead_h,est,lo,hi,effect_pct,temp,precip,sun_min,code,model` | stündlich 6–23 Uhr je Club, etwa 1.900 Zeilen am Tag |
+
+Open-Meteo liefert nur etwa 74 Tage Wetter zurück, deshalb wird das Wetter selbst archiviert. Die Schnappschüsse halten fest, was die Seite zum jeweiligen Zeitpunkt vorhergesagt hat, inklusive des vorhergesagten Wetters und der Modellversion (`model` = Commit). Damit lässt sich die echte Prognosegüte je Vorlaufzeit messen und lassen sich spätere Modellversionen fair vergleichen.
 
 ### Dauerbetrieb auf dem Mac (launchd)
 
@@ -78,7 +91,7 @@ Bewusst nachvollziehbar statt Blackbox, alles in `evo/forecast.py`, `evo/effects
 4. **Backfitting.** Effekte schätzen, Messwerte um sie bereinigen, Profil neu bauen, zweimal. So beschreibt das Profil Normalbedingungen und nicht „die Woche, in der es oft geregnet hat“.
 5. **Nowcast.** Ist der Club gerade voller oder leerer als vorhergesagt, wird die Abweichung fortgeschrieben und klingt mit zwei Stunden Zeitkonstante ab.
 6. **Band (80 %).** Zusammengesetzt aus der Reststreuung je Stunde nach Abzug der Effekte, der Unsicherheit der Effekte selbst (Tages-Block-Bootstrap), einer Wetter-Unsicherheit, die mit der Vorlaufzeit bis 4 Tage wächst, und einem Zuschlag an Feiertagen, solange wenige davon in den Daten sind. An normalen Tagen wird das Band dadurch schmaler, bei unsicheren Lagen breiter.
-7. **Backtest.** Die letzten 7 Tage werden mit dem jeweils vorher bekannten Wissen nachgerechnet: Modell mit Effekten, reines Wochenprofil und „gleiche Uhrzeit Vorwoche“. Helfen die Effekte nicht, werden sie abgeschaltet. Das Dashboard zeigt alle drei Fehler und die Trefferquote des Bands. Der Backtest nutzt gemessenes statt vorhergesagtes Wetter und ist damit etwas zu optimistisch.
+7. **Backtest.** Die letzten 7 Tage werden mit dem jeweils vorher bekannten Wissen nachgerechnet: Modell mit Effekten, reines Wochenprofil und „gleiche Uhrzeit Vorwoche“. Helfen die Effekte nicht, werden sie abgeschaltet. Das Dashboard zeigt alle drei Fehler und die Trefferquote des Bands. Der Backtest nutzt gemessenes statt vorhergesagtes Wetter und ist damit etwas zu optimistisch. Die ehrliche Messung liefern die täglichen Prognose-Schnappschüsse in `data/forecasts/`.
 
 Die Karte „Was die Auslastung beeinflusst“ zeigt je Effekt Wirkung, 80-%-Spanne, Datenbasis und Status sowie den Stand der Datenquellen.
 
@@ -109,7 +122,8 @@ Optionen mit Defaults stehen in `evo/config.py`, eigene Werte in `config.json` (
 | `evo/model.py` | Prognosemodell, Tagesübersicht, Backtest |
 | `evo/server.py` | Webserver, API, Hintergrund-Sammler |
 | `evo/static_export.py` | statische Seite für GitHub Pages |
-| `evo/csvstore.py` | Monats-CSVs |
+| `evo/csvstore.py` | Monats-CSVs für Besucher und Wetter |
+| `evo/snapshot.py` | täglicher Prognose-Schnappschuss |
 | `evo/demo.py` | Demo-Daten |
 | `web/index.html` | Dashboard (eigene SVG-Charts, hell und dunkel) |
 

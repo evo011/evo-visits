@@ -126,4 +126,4 @@ def export_site(cfg: Config, store: Store, out_dir: Path,
 
     _copy_fonts(out_dir, written)
 
-    return {"gyms": len(gyms), "files": len(written), "out": str(out_dir)}
+    return {"gyms": len(gyms), "files": len(written), "out": str(out_dir), "app": app}

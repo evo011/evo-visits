@@ -63,19 +63,22 @@ jobs:
       - name: CSVs exportieren
         run: python3 evo_visits.py export-csv
 
+      - name: Seite exportieren
+        continue-on-error: true
+        run: python3 evo_visits.py export --out site --forecast-snapshot data/forecasts
+
       - name: Daten committen
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/visits-*.csv
+          shopt -s nullglob
+          files=(data/visits-*.csv data/weather-*.csv data/forecasts/*.csv)
+          if [ ${#files[@]} -gt 0 ]; then git add "${files[@]}"; fi
           if git diff --cached --quiet; then echo "keine neuen Daten"; exit 0; fi
           git commit -m "data: Besucherzahlen $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M')"
           for i in 1 2 3; do git pull --rebase --quiet && git push --quiet && exit 0; sleep 5; done
           exit 1
-
-      - name: Seite exportieren
-        run: python3 evo_visits.py export --out site
 
       - uses: actions/cache/save@v6
         if: always()

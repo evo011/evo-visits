@@ -6,7 +6,9 @@ from unittest import mock
 from zoneinfo import ZoneInfo
 
 from evo.config import Config, in_active_window
-from evo.csvstore import HEADER, export_monthly, import_dir
+from evo.context import SCHEMA
+from evo.csvstore import (HEADER, WEATHER_HEADER, export_monthly, export_weather_monthly,
+                          import_dir, import_weather_dir)
 from evo.store import Reading, Store
 
 TZ = ZoneInfo("Europe/Berlin")
@@ -83,6 +85,102 @@ class CsvRoundtripTestCase(unittest.TestCase):
         rows = list(fresh.export_rows())
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0][1], "Y")
+
+
+class WeatherRoundtripTestCase(unittest.TestCase):
+    """Wetter-CSVs: Export schliesst zukuenftige Stunden aus, Import ueberschreibt nichts."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.directory = Path(self.tmp.name) / "csv"
+        self.store = Store(str(Path(self.tmp.name) / "visits.db"))
+        with self.store.conn() as c:
+            c.executescript(SCHEMA)
+        # 01.10.2026 12:00 und 13:00 UTC Berlin = vergangen, 15:00 UTC = Zukunft
+        self.past = ts_utc(2026, 10, 1, 12, 0)
+        self.past2 = ts_utc(2026, 10, 1, 13, 0)
+        self.future = ts_utc(2026, 10, 1, 15, 0)
+        self.now = ts_utc(2026, 10, 1, 14, 0)
+        with self.store.conn() as c:
+            c.executemany(
+                "INSERT OR REPLACE INTO weather (loc, ts, temp, precip, sunshine, code, fetched_at) "
+                "VALUES (?,?,?,?,?,?,?)",
+                [
+                    ("düsseldorf", self.past, 12.5, 0.0, 2400, 2, self.now - 600),
+                    ("koeln", self.past, None, None, None, None, self.now - 600),
+                    ("koeln", self.past2, 11.0, 0.3, None, 61, self.now - 600),
+                    ("düsseldorf", self.future, 20.0, 0.0, 3600, 0, self.now - 600),
+                ])
+
+    def test_export_excludes_future_hours(self):
+        changed = export_weather_monthly(self.store, self.directory, TZ, self.now)
+        self.assertEqual([p.name for p in changed], ["weather-2026-10.csv"])
+        content = (self.directory / "weather-2026-10.csv").read_text(encoding="utf-8")
+        lines = content.split("\n")
+        self.assertEqual(lines[0], ",".join(WEATHER_HEADER))
+        rows = [r.split(",") for r in lines[1:] if r]
+        # sortiert nach (ts, loc), leere Zellen fuer None, kompakte Zahlen
+        self.assertEqual(
+            rows,
+            [
+                [str(self.past), "2026-10-01 14:00", "düsseldorf", "12.5", "0", "2400", "2"],
+                [str(self.past), "2026-10-01 14:00", "koeln", "", "", "", ""],
+                [str(self.past2), "2026-10-01 15:00", "koeln", "11", "0.3", "", "61"],
+            ])
+
+    def test_roundtrip_into_fresh_store(self):
+        export_weather_monthly(self.store, self.directory, TZ, self.now)
+        fresh = Store(str(Path(self.tmp.name) / "fresh.db"))
+        n = import_weather_dir(fresh, self.directory)
+        self.assertEqual(n, 3)
+        with fresh.conn() as c:
+            rows = c.execute(
+                "SELECT loc, ts, temp, precip, sunshine, code, fetched_at FROM weather "
+                "ORDER BY ts, loc").fetchall()
+        self.assertEqual(rows, [
+            ("düsseldorf", self.past, 12.5, 0.0, 2400.0, 2, 0),
+            ("koeln", self.past, None, None, None, None, 0),
+            ("koeln", self.past2, 11.0, 0.3, None, 61, 0),
+        ])
+
+    def test_import_does_not_overwrite_existing_row(self):
+        export_weather_monthly(self.store, self.directory, TZ, self.now)
+        # frischere API-Zeile im Store, fetched_at != 0
+        with self.store.conn() as c:
+            c.execute(
+                "INSERT OR REPLACE INTO weather (loc, ts, temp, precip, sunshine, code, fetched_at) "
+                "VALUES (?,?,?,?,?,?,?)",
+                ("koeln", self.past, 99.0, 1.0, 100.0, 5, self.now))
+        import_weather_dir(self.store, self.directory)
+        with self.store.conn() as c:
+            row = c.execute(
+                "SELECT temp, fetched_at FROM weather WHERE loc='koeln' AND ts=?",
+                (self.past,)).fetchone()
+        self.assertEqual(row, (99.0, self.now))
+
+    def test_second_export_unchanged(self):
+        export_weather_monthly(self.store, self.directory, TZ, self.now)
+        before = (self.directory / "weather-2026-10.csv").read_bytes()
+        changed = export_weather_monthly(self.store, self.directory, TZ, self.now)
+        self.assertEqual(changed, [])
+        self.assertEqual((self.directory / "weather-2026-10.csv").read_bytes(), before)
+
+    def test_import_missing_dir_and_schema_creation(self):
+        # Verzeichnis fehlt -> 0
+        self.assertEqual(import_weather_dir(self.store, Path(self.tmp.name) / "gibt-es-nicht"), 0)
+        # Store ohne weather-Tabelle: Schema wird angelegt, Import klappt
+        d = Path(self.tmp.name) / "weatherval"
+        d.mkdir()
+        (d / "weather-2026-05.csv").write_text(
+            "ts,local_time,loc,temp,precip,sunshine,code\n"
+            f"{self.past},2026-05-01 14:00,düsseldorf,3.5,,,7\n",
+            encoding="utf-8")
+        fresh = Store(str(Path(self.tmp.name) / "fresh2.db"))
+        self.assertEqual(import_weather_dir(fresh, d), 1)
+        with fresh.conn() as c:
+            row = c.execute("SELECT loc, ts, temp, fetched_at FROM weather").fetchone()
+        self.assertEqual(row, ("düsseldorf", self.past, 3.5, 0))
 
 
 class ActiveWindowTestCase(unittest.TestCase):
