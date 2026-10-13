@@ -910,7 +910,7 @@ function renderLead() {
   const gEntry = state.gyms.find((g) => g.gym === state.gym);
   let typVal = gEntry ? gEntry.typical_now : null;
   if (typVal == null) {
-    const typ = d.typical_today.reduce((best, p) => (p[1] != null && Math.abs(p[0] - nowMs) < Math.abs((best?.[0] ?? Infinity) - nowMs) ? p : best), null);
+    const typ = d.typical_today.reduce((best, p) => (p[1] != null && Math.abs(p[0] - nowMs) <= 15 * 60e3 && (best == null || Math.abs(p[0] - nowMs) < Math.abs(best[0] - nowMs)) ? p : best), null);
     typVal = typ ? typ[1] : null;
   }
 
