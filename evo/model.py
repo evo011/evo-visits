@@ -15,6 +15,7 @@ from . import effects
 from .calendar_de import Location, holiday_name, is_bridge_day
 from .context import WeatherHour
 from .forecast import NOWCAST_LOOKBACK_MIN, NOWCAST_TAU_MIN, Profile
+from .pool import PoolShape, build_prior
 
 
 class FeatureSource:
@@ -62,7 +63,8 @@ class FeatureSource:
 
 class Model:
     def __init__(self, series, tz, now_ts: int, feats: FeatureSource, bin_minutes: int = 15,
-                 half_life_days: float = 21.0, use_effects: bool = True, n_boot: int = 200):
+                 half_life_days: float = 21.0, use_effects: bool = True, n_boot: int = 200,
+                 pool_prior=None, fixed_fit: Optional[effects.EffectFit] = None):
         self.tz = tz
         self.bin = bin_minutes
         self.now_ts = now_ts
@@ -79,7 +81,7 @@ class Model:
 
         def make_profile(values):
             return Profile([], tz, now_ts, bin_minutes, half_life_days,
-                           day_kind=feats.day_kind, binned=values)
+                           day_kind=feats.day_kind, binned=values, pool_prior=pool_prior)
 
         def build_profile(values):
             prof = make_profile(values)
@@ -105,7 +107,14 @@ class Model:
         # die day_kind ebenfalls auf 6 abbildet)
         self.n_holiday_days = len({r.day for r in rows if feats.holiday(r.day) is not None})
 
-        if use_effects:
+        if use_effects and fixed_fit is not None:
+            # fertiger gemeinsamer Fit: nur noch die eigenen Werte bereinigen
+            self.fit = fixed_fit
+            cleaned = {(r.day, r.slot):
+                       max(0.0, (r.v + effects.OFFSET) / fixed_fit.multiplier(r.x) - effects.OFFSET)
+                       for r in rows}
+            self.profile = make_profile(cleaned)
+        elif use_effects:
             self.fit, _ = effects.backfit(rows, build_profile, rounds=2, n_boot=n_boot)
             self.profile = built[-1]  # letztes bereinigtes Profil aus dem Backfitting
         else:
@@ -322,6 +331,184 @@ def effects_help(bt: Optional[dict]) -> Optional[bool]:
     if bt is None:
         return None
     return bt["mae_model"] <= bt["mae_profile"]
+
+
+class Pooled:
+    """Gemeinsames Modell aller Clubs: Niveaus, gemeinsame Tagesform, Effekt-Fit."""
+
+    def __init__(self, levels: dict, shape: PoolShape,
+                 fit: Optional[effects.EffectFit], tz, now_ts: int, feats_by_gym: dict,
+                 bin_minutes: int, half_life_days: float):
+        self.levels = levels
+        self.shape = shape
+        self.fit = fit
+        self.tz = tz
+        self.now_ts = now_ts
+        self.feats_by_gym = feats_by_gym
+        self.bin = bin_minutes
+        self.half_life_days = half_life_days
+
+    def model(self, gym: str, series) -> Model:
+        """Modell eines Clubs aus dem gemeinsamen Fit und Prior."""
+        return Model(series, self.tz, self.now_ts, self.feats_by_gym[gym],
+                     self.bin, self.half_life_days,
+                     use_effects=self.fit is not None,
+                     pool_prior=self.shape.prior_for(gym),
+                     fixed_fit=self.fit)
+
+
+def build_pooled(series_by_gym: dict, feats_by_gym: dict, tz, now_ts: int,
+                 bin_minutes: int = 15, half_life_days: float = 21.0,
+                 use_effects: bool = True, n_boot: int = 200) -> Pooled:
+    """Gemeinsames Modell ueber alle Clubs: Niveaus und Form gemeinsam, Effekte gepoolt."""
+    today = datetime.fromtimestamp(now_ts, tz).date()
+    step = bin_minutes * 60
+    binned_by_gym: dict = {}
+    rows = []
+    for gym, series in series_by_gym.items():
+        feats = feats_by_gym[gym]
+        binned_by_gym[gym] = Profile(series, tz, now_ts, bin_minutes, half_life_days).binned
+        for (d, slot), v in binned_by_gym[gym].items():
+            if d >= today:
+                continue
+            ts = int(datetime(d.year, d.month, d.day, tzinfo=tz).timestamp()) + slot * step
+            x, has_weather = feats.x(ts)
+            rows.append(effects.Row(d, slot, v, x, has_weather,
+                                    group=gym, loc=feats.loc.key))
+
+    levels, shape = build_prior(binned_by_gym,
+                                {g: feats_by_gym[g].day_kind for g in binned_by_gym},
+                                today, bin_minutes, half_life_days)
+
+    def build_profiles(values_by_gym: dict) -> dict:
+        fns = {}
+        for gym, values in values_by_gym.items():
+            prof = Profile([], tz, now_ts, bin_minutes, half_life_days,
+                           day_kind=feats_by_gym[gym].day_kind, binned=values,
+                           pool_prior=shape.prior_for(gym))
+
+            def profile_fn(d, slot, prof=prof):
+                st = prof.seasonal_for(d, slot)
+                return st.mean if st is not None else None
+
+            fns[gym] = profile_fn
+        return fns
+
+    fit: Optional[effects.EffectFit] = None
+    if use_effects:
+        fit, _ = effects.backfit_pooled(rows, build_profiles, rounds=2, n_boot=n_boot)
+    return Pooled(levels, shape, fit, tz, now_ts, feats_by_gym,
+                  bin_minutes, half_life_days)
+
+
+def backtest_pooled(series_by_gym: dict, feats_by_gym: dict, tz,
+                    bin_minutes: int = 15, half_life_days: float = 21.0,
+                    days: int = 7, n_boot: int = 40) -> Optional[dict]:
+    """Backtest der letzten `days` Tage: gemeinsames Modell mit/ohne Effekte vs. Einzelmodell.
+
+    Testtage sind die letzten `days` Kalendertage bis zum Tag des juengsten Messwerts
+    ueber alle Clubs. Ein Slot zaehlt nur, wenn Messwert, alle vier Prognosen
+    (gemeinsam mit/ohne Effekte, Einzelmodell, Vorwoche) vorliegen. Die Effekt-
+    Entscheidung gilt gemeinsam fuer alle Clubs (siehe effects_help_pooled).
+    """
+    last_ts = max((ts for s in series_by_gym.values() for ts, _ in s), default=None)
+    if last_ts is None:
+        return None
+    step = bin_minutes * 60
+    last_day = datetime.fromtimestamp(last_ts, tz).date()
+    first_day = last_day - timedelta(days=days - 1)
+
+    # alle (Datum, Slot)-Mittelwerte je Club einmal vorberechnen
+    end_ts = int(datetime(last_day.year, last_day.month, last_day.day,
+                          tzinfo=tz).timestamp()) + 86400
+    binned_all = {g: Profile(s, tz, end_ts, bin_minutes, half_life_days).binned
+                  for g, s in series_by_gym.items()}
+
+    # gym -> Fehlerlisten; "days" = Testtage mit gezaehlten Slots
+    acc: dict = {}
+    all_err: dict = {"model": [], "profile": [], "own": [], "last_week": []}
+    all_hits = 0
+    counted_days: set = set()
+
+    for i in range(days):
+        d = first_day + timedelta(days=i)
+        day_start = int(datetime(d.year, d.month, d.day, tzinfo=tz).timestamp())
+        train_by_gym = {}
+        for gym, series in series_by_gym.items():
+            train = [(t, v) for t, v in series if t < day_start]
+            train_days = {datetime.fromtimestamp(t, tz).date() for t, _ in train}
+            if len(train_days) >= 7:
+                train_by_gym[gym] = train
+        if not train_by_gym:
+            continue
+        feats_train = {g: feats_by_gym[g] for g in train_by_gym}
+        pooled_eff = build_pooled(train_by_gym, feats_train, tz, day_start,
+                                  bin_minutes, half_life_days,
+                                  use_effects=True, n_boot=n_boot)
+        pooled_plain = build_pooled(train_by_gym, feats_train, tz, day_start,
+                                    bin_minutes, half_life_days,
+                                    use_effects=False, n_boot=n_boot)
+        for gym, train in train_by_gym.items():
+            m_eff = pooled_eff.model(gym, train)
+            m_plain = pooled_plain.model(gym, train)
+            m_own = Model(train, tz, day_start, feats_by_gym[gym], bin_minutes,
+                          half_life_days, use_effects=True, n_boot=n_boot)
+            g = acc.setdefault(gym, {"model": [], "profile": [], "own": [],
+                                     "last_week": [], "hits": 0, "n": 0, "days": set()})
+            for slot in range(24 * 60 // bin_minutes):
+                v = binned_all[gym].get((d, slot))
+                if v is None:
+                    continue
+                ts = day_start + slot * step
+                p_eff = m_eff.predict(ts)
+                p_plain = m_plain.predict(ts)
+                p_own = m_own.predict(ts)
+                prev = binned_all[gym].get((d - timedelta(days=7), slot))
+                if p_eff is None or p_plain is None or p_own is None or prev is None:
+                    continue
+                errs = (abs(v - p_eff["est"]), abs(v - p_plain["est"]),
+                        abs(v - p_own["est"]), abs(v - prev))
+                g["model"].append(errs[0])
+                g["profile"].append(errs[1])
+                g["own"].append(errs[2])
+                g["last_week"].append(errs[3])
+                if p_eff["lo"] <= v <= p_eff["hi"]:
+                    g["hits"] += 1
+                    all_hits += 1
+                g["n"] += 1
+                g["days"].add(d)
+                counted_days.add(d)
+                for key, e in zip(("model", "profile", "own", "last_week"), errs):
+                    all_err[key].append(e)
+
+    def summarize(errs: dict, hits: int, n: int, n_days, first, last) -> dict:
+        return {"mae_model": round(sum(errs["model"]) / n, 1),
+                "mae_profile": round(sum(errs["profile"]) / n, 1),
+                "mae_own": round(sum(errs["own"]) / n, 1),
+                "mae_last_week": round(sum(errs["last_week"]) / n, 1),
+                "coverage_pct": round(100.0 * hits / n),
+                "n": n, "days": n_days,
+                "first_day": first.isoformat(), "last_day": last.isoformat(),
+                "weather_note": "Backtest mit gemessenem statt vorhergesagtem Wetter"}
+
+    by_gym = {}
+    for gym, g in acc.items():
+        if g["n"]:
+            by_gym[gym] = summarize(g, g["hits"], g["n"], len(g["days"]),
+                                    min(g["days"]), max(g["days"]))
+    n_all = len(all_err["model"])
+    if not n_all:
+        return None
+    allx = summarize(all_err, all_hits, n_all, len(counted_days),
+                     min(counted_days), max(counted_days))
+    return {"by_gym": by_gym, "all": allx}
+
+
+def effects_help_pooled(bt: Optional[dict]) -> Optional[bool]:
+    """True, wenn das gemeinsame Effekt-Modell im Backtest nicht schlechter ist."""
+    if bt is None:
+        return None
+    return effects_help(bt["all"])
 
 
 def build_model(series, tz, now_ts, feats: FeatureSource, bin_minutes: int = 15,

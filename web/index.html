@@ -1289,6 +1289,9 @@ function renderEffects() {
   trh.append(tds);
   tb.append(trh);
   t.append(tb);
+  const fxPool = el("p", { class: "mini" },
+    "Die Effekte werden gemeinsam aus allen Clubs geschätzt. Ein Regentag zählt je Stadt, Regen in Hamburg und Köln am selben Tag sind zwei Tage.");
+  t.after(fxPool);
 
   const btBox = $("#fxBacktest");
   btBox.textContent = "";
@@ -1296,7 +1299,9 @@ function renderEffects() {
   if (bt) {
     const p = el("p", { class: "fx-line" });
     p.append(document.createTextNode(`Letzte ${bt.days} Tage nachgerechnet: `));
-    const items = [["Modell", bt.mae_model], ["nur Wochenprofil", bt.mae_profile], ["„wie Vorwoche“", bt.mae_last_week]];
+    const items = [["Modell", bt.mae_model]];
+    if (bt.mae_own != null) items.push(["nur eigene Daten", bt.mae_own]);
+    items.push(["nur Wochenprofil", bt.mae_profile], ["„wie Vorwoche“", bt.mae_last_week]);
     const minV = Math.min(...items.map(([, v]) => v));
     items.forEach(([label, v], i) => {
       if (i) p.append(document.createTextNode(", "));

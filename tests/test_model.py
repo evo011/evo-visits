@@ -7,7 +7,8 @@ from datetime import date, datetime, timedelta
 from evo.calendar_de import Location
 from evo.context import WeatherHour
 from evo.forecast import Profile, get_tz
-from evo.model import FeatureSource, Model, backtest_compare, build_model, effects_help
+from evo.model import (FeatureSource, Model, backtest_compare, backtest_pooled,
+                       build_model, build_pooled, effects_help, effects_help_pooled)
 
 TZ = get_tz("Europe/Berlin")
 LOC = Location("düsseldorf", "Düsseldorf", "NW", 51.227, 6.773)
@@ -230,8 +231,150 @@ class ModelTests(unittest.TestCase):
         fc = m.forecast(hours=2, recent=None)
         self.assertTrue(all(p["est"] is None or p["est"] >= 0 for p in fc))
 
+    def test_fixed_fit_is_used_uncleaned(self):
+        # fixed_fit: das Modell nutzt den Fit, ohne selbst zu fitten; das Profil
+        # entsteht aus den um die Effekte bereinigten Werten
+        feats = make_feats(RAINY_AFTERNOON)
+        series = synth_series(feats)
+        reference, _, _ = make_model()
+        fixed = reference.fit
+        self.assertLess(fixed.beta["rain"], 0.0)
+        m = Model(series, TZ, NOW_TS, feats, use_effects=True, fixed_fit=fixed)
+        self.assertIs(m.fit, fixed)
+        rain_day = max(RAINY_AFTERNOON)
+        dt = datetime(rain_day.year, rain_day.month, rain_day.day, 16, 0, tzinfo=TZ)
+        st = m.profile.seasonal_at(int(dt.timestamp()))
+        self.assertIsNotNone(st)
+        # bereinigt: Regentags-Werte durch den Regenfaktor geteilt -> hoeheres Profil
+        plain = Model(series, TZ, NOW_TS, feats, use_effects=False)
+        st_plain = plain.profile.seasonal_at(int(dt.timestamp()))
+        self.assertIsNotNone(st_plain)
+        self.assertGreater(st.mean, st_plain.mean)
+        # Prognose am Regentag: Profil hoch, mal Regenfaktor -> ungefaehr Rohwert
+        p = m.predict(int(dt.timestamp()))
+        self.assertIsNotNone(p)
+        p_plain = plain.predict(int(dt.timestamp()))
+        self.assertIsNotNone(p_plain)
+        self.assertLess(abs(p["est"] - p_plain["est"]), 0.3 * p_plain["est"])
 
-class BacktestCompareTests(unittest.TestCase):
+    def test_pool_prior_smoothes_short_series(self):
+        # ein Club mit wenigen Daten bekommt vom Prior Werte fuer ungesehene Slots
+        feats = make_feats(RAINY_AFTERNOON)
+        full = synth_series(feats)
+        short = [(t, v) for t, v in full
+                 if datetime.fromtimestamp(t, TZ).date() <= date(2026, 8, 15)]
+        pooled = build_pooled({"gym": full}, {"gym": feats}, TZ, NOW_TS)
+        prior = pooled.shape.prior_for("gym")
+        m_short = Model(short, TZ, NOW_TS, feats, use_effects=False, pool_prior=prior)
+        # Dienstag 17 Uhr: short endet Mitte August, ohne Prior kein Wert
+        ts = int(datetime(2026, 10, 13, 17, 0, tzinfo=TZ).timestamp())
+        self.assertIsNotNone(m_short.predict(ts))
+        plain = Model(short, TZ, NOW_TS, feats, use_effects=False)
+        self.assertIsNone(plain.predict(ts))
+
+
+class PooledTests(unittest.TestCase):
+    """Drei Clubs in zwei Staedten: gemeinsames Modell mit Effekten und Prior."""
+
+    LOC_B = Location("berlin", "Berlin", "BE", 52.520, 13.405)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.feats_d = make_feats(RAINY_AFTERNOON)
+        # Berlin: eigene Wetterkarte, Regen an anderen Tagen
+        start = datetime.fromtimestamp(NOW_TS, TZ) - timedelta(days=42)
+        weather_b = {}
+        for i in range(50):
+            d = start.date() + timedelta(days=i)
+            midnight = datetime(d.year, d.month, d.day, tzinfo=TZ)
+            for h in range(24):
+                ts = int((midnight + timedelta(hours=h)).timestamp())
+                ts -= ts % 3600
+                rain = d.weekday() == 3 and 14 <= h < 18
+                weather_b[ts] = WeatherHour(ts, 15.0 if not rain else 12.0,
+                                            2.0 if rain else 0.0,
+                                            0.0 if rain else 3600.0,
+                                            65 if rain else 1)
+        ctx_b = FakeContext(weather_b, SCHOOL_DAYS)
+        cls.feats_b = FeatureSource(cls.LOC_B, TZ, ctx_b, int(start.timestamp()),
+                                    int((start + timedelta(days=50)).timestamp()))
+        cls.series = {
+            "duesseldorf": synth_series(cls.feats_d, seed=11),
+            "koeln": [(t, 0.8 * v) for t, v in synth_series(cls.feats_d, seed=12)],
+            "berlin": [(t, 1.3 * v) for t, v in synth_series(cls.feats_b, seed=13)],
+        }
+        cls.feats_by_gym = {"duesseldorf": cls.feats_d, "koeln": cls.feats_d,
+                            "berlin": cls.feats_b}
+        cls.pooled = build_pooled(cls.series, cls.feats_by_gym, TZ, NOW_TS)
+
+    def test_levels_match_series_ratio(self):
+        levels = self.pooled.levels
+        self.assertAlmostEqual(levels["koeln"] / levels["duesseldorf"], 0.8, delta=0.05)
+        self.assertAlmostEqual(levels["berlin"] / levels["duesseldorf"], 1.3, delta=0.08)
+
+    def test_model_per_gym_predicts(self):
+        for gym, series in self.series.items():
+            m = self.pooled.model(gym, series)
+            self.assertTrue(m.use_effects)
+            ts = int(datetime(2026, 10, 13, 17, 0, tzinfo=TZ).timestamp())
+            p = m.predict(ts)
+            self.assertIsNotNone(p)
+            # Berlin (1.3x Niveau) liegt ueber Koeln (0.8x)
+        m_k = self.pooled.model("koeln", self.series["koeln"])
+        m_b = self.pooled.model("berlin", self.series["berlin"])
+        ts = int(datetime(2026, 10, 13, 17, 0, tzinfo=TZ).timestamp())
+        self.assertGreater(m_b.predict(ts)["est"], m_k.predict(ts)["est"])
+
+    def test_shared_fit_across_gyms(self):
+        m_a = self.pooled.model("duesseldorf", self.series["duesseldorf"])
+        m_b = self.pooled.model("berlin", self.series["berlin"])
+        self.assertIs(m_a.fit, m_b.fit)
+        self.assertIs(m_a.fit, self.pooled.fit)
+
+    def test_no_effects_yields_null_fit(self):
+        pooled = build_pooled(self.series, self.feats_by_gym, TZ, NOW_TS,
+                              use_effects=False)
+        self.assertIsNone(pooled.fit)
+        m = pooled.model("duesseldorf", self.series["duesseldorf"])
+        self.assertFalse(m.use_effects)
+        self.assertTrue(all(b == 0.0 for b in m.fit.beta.values()))
+        ts = int(datetime(2026, 10, 13, 17, 0, tzinfo=TZ).timestamp())
+        self.assertIsNotNone(m.predict(ts))
+
+
+class PooledBacktestTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.feats_d = make_feats(RAINY_AFTERNOON)
+        cls.series = {
+            "duesseldorf": synth_series(cls.feats_d, rain_factor=0.7),
+            "koeln": [(t, 0.8 * v) for t, v in synth_series(cls.feats_d, rain_factor=0.7, seed=12)],
+        }
+        cls.feats_by_gym = {"duesseldorf": cls.feats_d, "koeln": cls.feats_d}
+
+    def test_backtest_pooled_returns_by_gym_and_all(self):
+        bt = backtest_pooled(self.series, self.feats_by_gym, TZ, n_boot=40)
+        self.assertIsNotNone(bt)
+        self.assertIn("duesseldorf", bt["by_gym"])
+        self.assertIn("koeln", bt["by_gym"])
+        for entry in list(bt["by_gym"].values()) + [bt["all"]]:
+            for key in ("mae_model", "mae_profile", "mae_own", "mae_last_week",
+                        "coverage_pct", "n", "days", "first_day", "last_day",
+                        "weather_note"):
+                self.assertIn(key, entry)
+        # gemeinsamer Effekt-Fit aus zwei Staedten: schlaegt das Wochenprofil
+        self.assertLessEqual(bt["all"]["mae_model"], bt["all"]["mae_profile"])
+        self.assertIsInstance(effects_help_pooled(bt), bool)
+
+    def test_too_little_history_is_none(self):
+        feats = make_feats(RAINY_AFTERNOON)
+        series = {"duesseldorf": synth_series(feats, days=5)}
+        bt = backtest_pooled(series, {"duesseldorf": feats}, TZ)
+        self.assertIsNone(bt)
+        self.assertIsNone(effects_help_pooled(bt))
+
+
+
     def test_model_beats_profile_with_real_rain_effect(self):
         # Regen auch in den letzten 7 Tagen, damit der Backtest etwas zu holen hat
         rain_days = {date(2026, 9, 15) + timedelta(days=5 * i) for i in range(8)}

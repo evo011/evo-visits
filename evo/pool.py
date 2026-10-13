@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Callable, Optional
 
-from evo.forecast import SHRINK_K, Stat, _collect_observations, _wstats
+from .forecast import SHRINK_K, Stat, _collect_observations, _wstats
 
 Binned = dict[tuple[date, int], float]
 

@@ -175,8 +175,8 @@ class ServerAppTestCase(unittest.TestCase):
         self.assertEqual(len(out["context"]), 3)
 
     def test_api_gyms_builds_no_model(self):
-        with mock.patch("evo.server.backtest_compare", side_effect=AssertionError), \
-                mock.patch("evo.server.build_model", side_effect=AssertionError):
+        with mock.patch("evo.server.backtest_pooled", side_effect=AssertionError), \
+                mock.patch("evo.server.build_pooled", side_effect=AssertionError):
             out = self.app.api_gyms({})
         self.assertEqual(len(out), len(self.GYMS))
         for g in out:
@@ -194,8 +194,8 @@ class ServerAppTestCase(unittest.TestCase):
         self.assertEqual(by_name["EVO Unterbilk"]["typical_now"], expected)
 
     def test_api_weekly_builds_no_model(self):
-        with mock.patch("evo.server.backtest_compare", side_effect=AssertionError), \
-                mock.patch("evo.server.build_model", side_effect=AssertionError):
+        with mock.patch("evo.server.backtest_pooled", side_effect=AssertionError), \
+                mock.patch("evo.server.build_pooled", side_effect=AssertionError):
             out = self.app.api_weekly(self.q(gym="EVO Unterbilk"))
         self.assertNotIn("error", out)
         self.assertTrue(out["days"])

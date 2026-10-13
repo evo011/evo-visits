@@ -20,7 +20,8 @@ from .config import WEB_DIR, Config, in_active_window
 from .context import Context
 from .fetch import collect_once
 from .forecast import Profile, get_tz
-from .model import FeatureSource, Model, backtest_compare, build_model
+from .model import (FeatureSource, Model, Pooled, backtest_pooled, build_pooled,
+                    effects_help_pooled)
 from .store import Store
 
 WEATHER_LABEL = "Open-Meteo"
@@ -84,6 +85,7 @@ class App:
         self.tz = get_tz(cfg.timezone)
         self._models: dict[str, tuple[tuple, Model]] = {}
         self._light: dict[str, tuple[tuple, Profile]] = {}
+        self._pooled_cache: Optional[tuple[tuple, Pooled]] = None
         self._mlock = threading.Lock()
         self._backtests: dict[tuple, Optional[dict]] = {}
 
@@ -102,25 +104,57 @@ class App:
             return 0
         return max((int(r["fetched_at"]) for r in self.ctx.status()), default=0)
 
+    def _pooled_inputs(self, now: int) -> tuple:
+        """series_by_gym und feats_by_gym ueber den konfigurierten Zeitraum."""
+        start = now - self.cfg.history_weeks * 7 * 86400
+        series_by_gym = {}
+        feats_by_gym = {}
+        for g in self.store.gyms():
+            gym = g["gym"]
+            series_by_gym[gym] = self.store.series(gym, start, now)
+            feats_by_gym[gym] = FeatureSource(self.location(gym), self.tz, self.ctx,
+                                              start, now + 8 * 86400)
+        return series_by_gym, feats_by_gym
+
+    def pooled(self) -> "Pooled":
+        """Gemeinsames Modell ueber alle Clubs, gecacht wie model()."""
+        now = self.now()
+        last_ts = max((g["last_ts"] for g in self.store.gyms()), default=0)
+        key = (last_ts, now // (self.cfg.bin_minutes * 60), self._ctx_version())
+        with self._mlock:
+            hit = self._pooled_cache
+            if hit and hit[0] == key:
+                return hit[1]
+        series_by_gym, feats_by_gym = self._pooled_inputs(now)
+        bt_key = datetime.fromtimestamp(now, self.tz).date()
+        if bt_key not in self._backtests:
+            self._backtests[bt_key] = backtest_pooled(series_by_gym, feats_by_gym,
+                                                      self.tz, self.cfg.bin_minutes,
+                                                      self.cfg.half_life_days)
+        use_effects = True
+        if self._backtests[bt_key] is not None:
+            use_effects = effects_help_pooled(self._backtests[bt_key]) is not False
+        pooled = build_pooled(series_by_gym, feats_by_gym, self.tz, now,
+                              self.cfg.bin_minutes, self.cfg.half_life_days,
+                              use_effects=use_effects, n_boot=200)
+        pooled.backtest = self._backtests[bt_key]
+        with self._mlock:
+            self._pooled_cache = (key, pooled)
+        return pooled
+
     def model(self, gym: str, last_ts: int) -> Model:
-        """Prognosemodell je Club, gecacht bis sich Zeitraum oder Kontextstaend aendert."""
+        """Prognosemodell aus dem gemeinsamen Pool, gecacht bis sich Zeitraum oder Kontext aendert."""
         now = self.now()
         key = self._model_key(last_ts)
         with self._mlock:
             hit = self._models.get(gym)
             if hit and hit[0] == key:
                 return hit[1]
-        loc = self.location(gym)
-        start = now - self.cfg.history_weeks * 7 * 86400
-        feats = FeatureSource(loc, self.tz, self.ctx, start, now + 8 * 86400)
-        series = self.store.series(gym, start, now)
-        bt_key = (gym, datetime.fromtimestamp(now, self.tz).date())
-        if bt_key not in self._backtests:
-            self._backtests[bt_key] = backtest_compare(series, self.tz, feats,
-                                                       self.cfg.bin_minutes,
-                                                       self.cfg.half_life_days)
-        model = build_model(series, self.tz, now, feats, self.cfg.bin_minutes,
-                            self.cfg.half_life_days, bt=self._backtests[bt_key])
+        pooled = self.pooled()
+        series = self.store.series(gym, now - self.cfg.history_weeks * 7 * 86400, now)
+        model = pooled.model(gym, series)
+        help_ = effects_help_pooled(pooled.backtest)
+        model.verdict = "hilft" if help_ else ("verworfen" if help_ is False else "ungeprüft")
         with self._mlock:
             self._models[gym] = (key, model)
         return model
@@ -244,8 +278,12 @@ class App:
         for ts in range(start0, start0 + 86400, step):
             st = model.profile.seasonal_at(ts)
             typical_today.append([ts * 1000, round(st.mean, 1) if st else None])
-        bt_key = (gym, datetime.fromtimestamp(now, self.tz).date())
-        bt = self._backtests.get(bt_key)
+        bt_full = self._backtests.get(datetime.fromtimestamp(now, self.tz).date())
+        bt_gym = None
+        if bt_full is not None:
+            entry = bt_full["by_gym"].get(gym)
+            if entry is not None:
+                bt_gym = dict(entry, verdict=model.effects_summary()["verdict"])
         return {
             "gym": gym,
             "unit": self.store.unit(gym),
@@ -263,7 +301,7 @@ class App:
             "location": {"city": loc.city, "state": loc.state},
             "sources": self._sources(loc),
             "first_ts": info["first_ts"],
-            "backtest": dict(bt, verdict=model.effects_summary()["verdict"]) if bt else None,
+            "backtest": bt_gym,
             "now": now,
         }
 
