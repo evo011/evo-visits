@@ -5,8 +5,9 @@ import unittest
 from collections import defaultdict, namedtuple
 from datetime import date, timedelta
 
-from evo.effects import (Row, backfit, band, feature_row, fit_effects, holiday_sd,
-                         residual_sd_by_hour, weather_sd, weather_x)
+from evo.effects import (Row, backfit, backfit_pooled, band, feature_row, fit_effects,
+                         fit_effects_pooled, holiday_sd, residual_sd_by_hour,
+                         weather_sd, weather_x)
 
 W = namedtuple("W", "temp precip sunshine")
 
@@ -157,6 +158,93 @@ class BackfitTests(unittest.TestCase):
         fit, _ = backfit(rows, mean_profile, rounds=1)
         self.assertTrue(fit.used["rain"] or fit.used["school"])
         self.assertGreater(fit.n_rows, 0)
+
+
+POOLED_START = date(2026, 9, 1)
+POOLED_SLOTS = (24, 48, 72)
+POOLED_GROUPS = ("club-a", "club-b", "club-c")
+POOLED_LOCS = ("hh", "ko", "ffm")
+POOLED_RAIN = {"hh": {0, 3}, "ko": {1, 4}, "ffm": {2, 5}}  # je Stadt 2 eigene Tage
+
+
+def pooled_rows():
+    """Drei Gruppen in drei Staedten, 10 Tage, flaches Profil 20, Regen +15 %."""
+    rows = []
+    for group, loc in zip(POOLED_GROUPS, POOLED_LOCS):
+        for i in range(10):
+            d = POOLED_START + timedelta(days=i)
+            for slot in POOLED_SLOTS:
+                if i in POOLED_RAIN[loc]:
+                    w = W(temp=15.0, precip=2.0, sunshine=None)
+                    v = (20.0 + 3.0) * 1.15 - 3.0
+                else:
+                    w = W(temp=15.0, precip=None, sunshine=0.0)
+                    v = 20.0
+                x, has_weather = feature_row(w, school=False, bridge=False)
+                rows.append(Row(d, slot, v, x, has_weather, group=group, loc=loc))
+    return rows
+
+
+def flat_profile(day, slot):
+    return 20.0
+
+
+def mean_profiles(values):
+    """{gruppe: {(datum, slot): wert}} -> {gruppe: profile_fn} ueber Slot-Mittel."""
+    profiles = {}
+    for group, vals in values.items():
+        by_slot = defaultdict(list)
+        for (_, s), v in vals.items():
+            by_slot[s].append(v)
+        mean = {s: sum(vs) / len(vs) for s, vs in by_slot.items()}
+        profiles[group] = (lambda day, slot, mean=mean: mean.get(slot))
+    return profiles
+
+
+class PooledTests(unittest.TestCase):
+    def test_single_group_does_not_use_rain(self):
+        rows = pooled_rows()
+        for group in POOLED_GROUPS:
+            fit = fit_effects([r for r in rows if r.group == group], flat_profile)
+            self.assertFalse(fit.used["rain"])
+            self.assertEqual(fit.beta["rain"], 0.0)
+
+    def test_pooled_uses_rain_across_cities(self):
+        rows = pooled_rows()
+        fit = fit_effects_pooled(rows, {g: flat_profile for g in POOLED_GROUPS})
+        self.assertTrue(fit.used["rain"])
+        self.assertEqual(fit.active_days["rain"], 6)
+        self.assertEqual(fit.n_days, 10)
+        eff = math.exp(fit.beta["rain"]) - 1.0
+        self.assertGreaterEqual(eff, 0.08)
+        self.assertLessEqual(eff, 0.16)
+
+    def test_same_city_rain_counts_once(self):
+        rows = []
+        for group in ("club-a", "club-b"):  # beide in Hamburg, Regen an denselben Tagen
+            for i in range(10):
+                d = POOLED_START + timedelta(days=i)
+                for slot in POOLED_SLOTS:
+                    if i in (0, 2, 4, 6, 8):
+                        w = W(temp=15.0, precip=2.0, sunshine=None)
+                        v = (20.0 + 3.0) * 1.15 - 3.0
+                    else:
+                        w = W(temp=15.0, precip=None, sunshine=0.0)
+                        v = 20.0
+                    x, has_weather = feature_row(w, school=False, bridge=False)
+                    rows.append(Row(d, slot, v, x, has_weather, group=group, loc="hh"))
+        fit = fit_effects_pooled(rows, {"club-a": flat_profile, "club-b": flat_profile})
+        self.assertEqual(fit.active_days["rain"], 5)  # nicht 10
+        self.assertTrue(fit.used["rain"])
+
+    def test_backfit_pooled_profiles_and_n_days(self):
+        rows = pooled_rows()
+        fit, profiles = backfit_pooled(rows, mean_profiles, rounds=1)
+        self.assertEqual(set(profiles), set(POOLED_GROUPS))
+        for group in POOLED_GROUPS:
+            self.assertIsNotNone(profiles[group](POOLED_START, 24))
+        self.assertEqual(fit.n_days, 10)
+        self.assertTrue(fit.used["rain"])
 
 
 class BandTests(unittest.TestCase):

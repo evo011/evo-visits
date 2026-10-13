@@ -16,6 +16,11 @@ Unsicherheit per Tages-Block-Bootstrap: Tage werden mit Zuruecklegen gezogen,
 die je Tag vorab summierten X'X- und X'y-Beitraege nur noch addiert; das CI
 sind die 10./90. Perzentile der Bootstrap-Betas.
 
+Gemeinsame Schaetzung (pooled): fit_effects_pooled schaetzt die Effekte
+gleichzeitig ueber alle Gruppen, z.B. einen Regeneffekt aus den Daten aller
+Staedte. Aktive Tage zaehlen dort je Stadt und Datum, Bootstrap-Bloecke sind
+Kalendertage ueber alle Gruppen hinweg.
+
 Backfitting: Regentage druecken das Profil, Ferientage heben es. Deshalb
 werden die Werte um die geschaetzten Effekte bereinigt und das Profil daraus
 neu gebaut, so bildet es Normalbedingungen ab.
@@ -83,6 +88,8 @@ class Row:
     v: float          # beobachteter Wert
     x: tuple          # Features in FEATURES-Reihenfolge
     has_weather: bool
+    group: str = ""   # Clubname
+    loc: str = ""     # Stadt-Schluessel
 
 
 @dataclass
@@ -161,23 +168,21 @@ def _solve(A: list, b: list) -> list:
     return x
 
 
-def fit_effects(rows: list, profile_fn: Callable[[date, int], Optional[float]],
-                lam: float = LAMBDA, n_boot: int = 200, seed: int = 0) -> EffectFit:
-    """Schaetzt die Effekte gegen ein gegebenes Profil (Normalbedingungen)."""
-    data = []
-    for r in rows:
-        s = profile_fn(r.day, r.slot)
-        if s is None:
-            continue
-        data.append((r, math.log((r.v + OFFSET) / (s + OFFSET))))
-    days = sorted({r.day for r, _ in data})
+def _fit(data: list, active_key: Callable, block_key: Callable,
+         lam: float, n_boot: int, seed: int) -> EffectFit:
+    """Ridge-Fit ueber (row, y)-Paare; aktiv/Block werden je Zeile bestimmt.
+
+    active_key(row) definiert, was als ein "aktiver Tag" eines Features zaehlt,
+    block_key(row) den Bootstrap-Block. n_days ist die Anzahl der Bloecke.
+    """
+    days = sorted({block_key(r) for r, _ in data})
     n_rows = len(data)
 
     active = {f: set() for f in FEATURES}
     for r, _ in data:
         for i, f in enumerate(FEATURES):
             if _is_active(f, r.x[i]):
-                active[f].add(r.day)
+                active[f].add(active_key(r))
     active_days = {f: len(active[f]) for f in FEATURES}
     used = {f: active_days[f] >= MIN_ACTIVE_DAYS[f] for f in FEATURES}
     if len(days) < 2:
@@ -203,13 +208,13 @@ def fit_effects(rows: list, profile_fn: Callable[[date, int], Optional[float]],
     k = len(feats)
     idx = [FEATURES.index(f) for f in feats]
 
-    # X'X und X'y je Tag vorab summieren, der Bootstrap addiert nur noch Tage.
+    # X'X und X'y je Block vorab summieren, der Bootstrap addiert nur noch Bloecke.
     day_xtx = {d: [[0.0] * k for _ in range(k)] for d in days}
     day_xty = {d: [0.0] * k for d in days}
     for r, y in data:
         xs = [r.x[i] for i in idx]
-        M = day_xtx[r.day]
-        b = day_xty[r.day]
+        M = day_xtx[block_key(r)]
+        b = day_xty[block_key(r)]
         for a in range(k):
             xa = xs[a]
             if xa:
@@ -283,6 +288,41 @@ def fit_effects(rows: list, profile_fn: Callable[[date, int], Optional[float]],
     return fit
 
 
+def fit_effects(rows: list, profile_fn: Callable[[date, int], Optional[float]],
+                lam: float = LAMBDA, n_boot: int = 200, seed: int = 0) -> EffectFit:
+    """Schaetzt die Effekte gegen ein gegebenes Profil (Normalbedingungen)."""
+    data = []
+    for r in rows:
+        s = profile_fn(r.day, r.slot)
+        if s is None:
+            continue
+        data.append((r, math.log((r.v + OFFSET) / (s + OFFSET))))
+    return _fit(data, active_key=lambda r: r.day, block_key=lambda r: r.day,
+                lam=lam, n_boot=n_boot, seed=seed)
+
+
+def fit_effects_pooled(rows: list,
+                       profile_fns: dict,
+                       lam: float = LAMBDA, n_boot: int = 200, seed: int = 0) -> EffectFit:
+    """Schaetzt die Effekte gemeinsam ueber alle Gruppen (je Gruppe ein Profil).
+
+    Aktive Tage zaehlen je Stadt und Datum (row.loc), Bootstrap-Bloecke sind
+    Kalendertage ueber alle Gruppen hinweg. Zeilen ohne Profil-Funktion fuer
+    ihre Gruppe oder mit Profilwert None fallen weg.
+    """
+    data = []
+    for r in rows:
+        fn = profile_fns.get(r.group)
+        if fn is None:
+            continue
+        s = fn(r.day, r.slot)
+        if s is None:
+            continue
+        data.append((r, math.log((r.v + OFFSET) / (s + OFFSET))))
+    return _fit(data, active_key=lambda r: (r.loc, r.day), block_key=lambda r: r.day,
+                lam=lam, n_boot=n_boot, seed=seed)
+
+
 def backfit(rows: list, build_profile: Callable[[dict], Callable[[date, int], Optional[float]]],
             rounds: int = 2, **fit_kwargs) -> tuple:
     """Effekte fitten, Werte bereinigen, Profil neu bauen - wiederholt.
@@ -301,6 +341,30 @@ def backfit(rows: list, build_profile: Callable[[dict], Callable[[date, int], Op
         profile = build_profile(cleaned)
         fit = fit_effects(rows, profile, **fit_kwargs)
     return fit, profile
+
+
+def backfit_pooled(rows: list,
+                   build_profiles: Callable[[dict], dict],
+                   rounds: int = 2, **fit_kwargs) -> tuple:
+    """Gemeinsames Backfitting: Profile je Gruppe, ein Fit ueber alle Gruppen.
+
+    build_profiles bekommt {gruppe: {(datum, slot): wert}} und liefert
+    {gruppe: profile_fn}. Zurueck kommen der letzte Fit und die letzten
+    (bereinigten) Profil-Funktionen.
+    """
+    values = defaultdict(dict)
+    for r in rows:
+        values[r.group][(r.day, r.slot)] = r.v
+    profiles = build_profiles(dict(values))
+    fit = fit_effects_pooled(rows, profiles, **fit_kwargs)
+    for _ in range(rounds):
+        cleaned = defaultdict(dict)
+        for r in rows:
+            m = math.exp(fit.log_effect(r.x))
+            cleaned[r.group][(r.day, r.slot)] = max(0.0, (r.v + OFFSET) / m - OFFSET)
+        profiles = build_profiles(dict(cleaned))
+        fit = fit_effects_pooled(rows, profiles, **fit_kwargs)
+    return fit, profiles
 
 
 def _sd(values: list) -> float:
