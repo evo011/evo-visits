@@ -26,8 +26,10 @@ def slug(name: str) -> str:
 class _FixedNowApp(App):
     """App mit festem Zeitpunkt, damit der Export reproduzierbar ist."""
 
-    def __init__(self, cfg, store, ctx, now_ts: int):
-        super().__init__(cfg, store, None, demo=False, ctx=ctx)
+    def __init__(self, cfg, store, ctx, now_ts: int,
+                 snapshot_dir: Optional[Path] = None):
+        super().__init__(cfg, store, None, demo=False, ctx=ctx,
+                         snapshot_dir=snapshot_dir)
         self._fixed_now = int(now_ts)
 
     def now(self) -> int:
@@ -97,8 +99,9 @@ def export_site(cfg: Config, store: Store, out_dir: Path, ctx=None,
 
     Kein Netz-Abruf: frische Kontextdaten liefert vorher 'python3 evo_visits.py context'.
     """
-    app = _FixedNowApp(cfg, store, ctx, now_ts=now) if now is not None \
-        else App(cfg, store, None, demo=False, ctx=ctx)
+    app = _FixedNowApp(cfg, store, ctx, now_ts=now, snapshot_dir=snapshot_dir) \
+        if now is not None else App(cfg, store, None, demo=False, ctx=ctx,
+                                   snapshot_dir=snapshot_dir)
     generated_at = now if now is not None else app.now()
     out_dir = Path(out_dir)
     (out_dir / "api").mkdir(parents=True, exist_ok=True)

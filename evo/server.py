@@ -17,7 +17,7 @@ from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 from .calendar_de import locate
-from .evaluate import empty_result, evaluate
+from .evaluate import apply_calibration, calibration, empty_result, evaluate
 from .config import WEB_DIR, Config, in_active_window
 from .context import Context
 from .fetch import collect_once
@@ -81,16 +81,20 @@ class Collector(threading.Thread):
 
 class App:
     def __init__(self, cfg: Config, store: Store, collector: Optional[Collector],
-                 demo: bool = False, ctx: Optional[Context] = None):
+                 demo: bool = False, ctx: Optional[Context] = None,
+                 snapshot_dir: Optional[Path] = None):
         self.cfg, self.store, self.collector, self.demo = cfg, store, collector, demo
         self.ctx = ctx
         self.tz = get_tz(cfg.timezone)
+        self.snapshot_dir = snapshot_dir if snapshot_dir is not None \
+            else Path(cfg.db_path).parent / "forecasts"
         self._models: dict[str, tuple[tuple, Model]] = {}
         self._light: dict[str, tuple[tuple, Profile]] = {}
         self._pooled_cache: Optional[tuple[tuple, Pooled]] = None
         self._mlock = threading.Lock()
         self._backtests: dict[tuple, Optional[dict]] = {}
         self._accuracy: Optional[tuple] = None
+        self._calibration: Optional[tuple] = None
 
     def now(self) -> int:
         if self.demo:
@@ -272,6 +276,8 @@ class App:
         recent = self.store.series(gym, now - 3 * 3600, now)
         cap = info["capacity"] if info["count"] is not None else 100.0
         fc = model.forecast(hours=7 * 24, recent=recent)
+        calib = self.calibration()
+        calibrated = apply_calibration(fc, calib, now, self.tz)
         # Profil-Kurve fuer den heutigen Tag (zum Vergleich "so voll ist es normalerweise");
         # day_kind bildet Feiertage auf Sonntag ab, das Profil zaehlt sie mit
         day0 = datetime.fromtimestamp(now, self.tz).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -305,6 +311,8 @@ class App:
             "sources": self._sources(loc),
             "first_ts": info["first_ts"],
             "backtest": bt_gym,
+            "band": {"source": "kalibriert" if calibrated else "modell",
+                     "n": calib["n"], "window_days": calib["window_days"]},
             "now": now,
         }
 
@@ -353,9 +361,19 @@ class App:
         now = self.now()
         if self._accuracy is not None and now - self._accuracy[0] < 600:
             return self._accuracy[1]
-        snap_dir = Path(self.cfg.db_path).parent / "forecasts"
-        res = evaluate(snap_dir, self.store, self.tz, now)
+        res = evaluate(self.snapshot_dir, self.store, self.tz, now)
         self._accuracy = (now, res)
+        return res
+
+    def calibration(self) -> dict:
+        """Band-Kalibrierung aus den Schnappschuss-CSVs, hoechstens alle 10 Minuten neu."""
+        if self.demo:
+            return {"window_days": 14, "n": 0, "buckets": {}}
+        now = self.now()
+        if self._calibration is not None and now - self._calibration[0] < 600:
+            return self._calibration[1]
+        res = calibration(self.snapshot_dir, self.store, self.tz, now)
+        self._calibration = (now, res)
         return res
 
     def api_collect(self, _q) -> dict:

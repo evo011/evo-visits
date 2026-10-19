@@ -8,6 +8,7 @@ gegen die tatsaechlich gemessenen Besucherzahlen.
 from __future__ import annotations
 
 import csv
+import hashlib
 import os
 from datetime import datetime
 from pathlib import Path
@@ -26,8 +27,19 @@ def _fmt(v) -> str:
 
 
 def default_model_version() -> str:
-    """Erste 7 Zeichen des Commit-SHA, sonst 'local'."""
-    return (os.environ.get("GITHUB_SHA") or "local")[:7]
+    """MODEL_VERSION aus der Umgebung, sonst 'c' + 7 Hex-Zeichen Hash ueber den Code.
+
+    Gehasst werden alle *.py im Paketverzeichnis evo/, sortiert nach Dateiname,
+    je Datei Name und Bytes. Nur der Code zaehlt, nicht jeder Daten-Commit.
+    """
+    env = os.environ.get("MODEL_VERSION")
+    if env:
+        return env
+    h = hashlib.sha1()
+    for path in sorted(Path(__file__).parent.glob("*.py"), key=lambda p: p.name):
+        h.update(path.name.encode("utf-8"))
+        h.update(path.read_bytes())
+    return "c" + h.hexdigest()[:7]
 
 
 def _has_made_date(path: Path, made_date: str) -> bool:

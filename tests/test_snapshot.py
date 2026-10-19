@@ -115,7 +115,7 @@ class SnapshotTestCase(unittest.TestCase):
         self.assertIsNone(snapshot_forecasts(app, self.directory, NOW_TS))
         self.assertFalse(self.directory.exists())
 
-    def test_model_version_default_local(self):
+    def test_model_version_default_is_code_hash(self):
         import os
         from unittest import mock
 
@@ -123,17 +123,31 @@ class SnapshotTestCase(unittest.TestCase):
         with mock.patch.dict(os.environ, {}, clear=True):
             snapshot_forecasts(app, self.directory, NOW_TS)
         _, rows = self.read_rows()
-        self.assertEqual({r[14] for r in rows}, {"local"})
+        versions = {r[14] for r in rows}
+        self.assertEqual(len(versions), 1)
+        version = versions.pop()
+        self.assertTrue(version.startswith("c"))
+        self.assertEqual(len(version), 8)
+        self.assertTrue(all(ch in "0123456789abcdef" for ch in version[1:]))
 
-    def test_model_version_from_github_sha(self):
+    def test_model_version_env_overrides(self):
         import os
         from unittest import mock
 
         app = FakeApp()
-        with mock.patch.dict(os.environ, {"GITHUB_SHA": "abcdef1234567890"}):
+        with mock.patch.dict(os.environ, {"MODEL_VERSION": "manual42"}):
             snapshot_forecasts(app, self.directory, NOW_TS)
         _, rows = self.read_rows()
-        self.assertEqual({r[14] for r in rows}, {"abcdef1"})
+        self.assertEqual({r[14] for r in rows}, {"manual42"})
+
+    def test_model_version_stable_across_calls(self):
+        import os
+        from unittest import mock
+
+        from evo.snapshot import default_model_version
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(default_model_version(), default_model_version())
 
 
 if __name__ == "__main__":

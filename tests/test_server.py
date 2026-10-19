@@ -201,6 +201,12 @@ class ServerAppTestCase(unittest.TestCase):
         self.assertNotIn("error", out)
         self.assertTrue(out["days"])
 
+    def test_api_gym_band_without_snapshots(self):
+        # keine Schnappschuss-CSVs im Default-Verzeichnis -> Modell-Band
+        out = self.app.api_gym(self.q(gym="EVO Unterbilk"))
+        self.assertNotIn("error", out)
+        self.assertEqual(out["band"], {"source": "modell", "n": 0, "window_days": 14})
+
 
 class FontsRouteTestCase(unittest.TestCase):
     """GET /fonts/<name>, PWA-Dateien und Icons ueber einen echten HTTP-Server auf 127.0.0.1."""

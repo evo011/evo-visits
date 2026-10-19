@@ -1,10 +1,11 @@
+import math
 import tempfile
 import unittest
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from evo.evaluate import evaluate
+from evo.evaluate import apply_calibration, calibration, evaluate
 from evo.snapshot import HEADER
 from evo.store import Reading, Store
 
@@ -205,6 +206,156 @@ class EvaluateTestCase(unittest.TestCase):
         res = evaluate(self.snap_dir, self.store, TZ, NOW_TS)
         counts = {g: m["n"] for g, m in res["all"].items()}
         self.assertEqual(counts, {"same_day": 1, "1d": 1, "2_3d": 2, "4_7d": 2})
+
+
+class CalibrationTestCase(unittest.TestCase):
+    """calibration und apply_calibration mit von Hand nachrechenbaren Quantilen."""
+
+    OFFSET = 3.0
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.snap_dir = Path(self.tmp.name) / "forecasts"
+        self.snap_dir.mkdir()
+        self.store = Store(str(Path(self.tmp.name) / "visits.db"))
+
+    def add_samples(self, gym, ts_values):
+        self.store.add_batch([(ts, Reading(gym, count=v)) for ts, v in ts_values])
+
+    def log_err(self, est, ist):
+        return math.log((ist + self.OFFSET) / (est + self.OFFSET))
+
+    def test_quantiles_per_group(self):
+        # 4 Zeilen in same_day, est 20, ist 20/40/40/80 -> Fehler aufsteigend sortiert
+        t = [hour_ts(2026, 10, 13, 6 + i) for i in range(4)]
+        made_ts = NOW_TS - 3600
+        ists = (20.0, 40.0, 40.0, 80.0)
+        for ti, target in enumerate(t):
+            self.add_samples("EVO Alpha", [(target, ists[ti])])
+        rows = [snap_row("2026-10-13", made_ts, "EVO Alpha", t[i], 20, 18, 22)
+                for i in range(4)]
+        write_csv(self.snap_dir, rows)
+
+        res = calibration(self.snap_dir, self.store, TZ, NOW_TS, min_n=4)
+        self.assertEqual(res["window_days"], 14)
+        self.assertEqual(res["n"], 4)
+        self.assertEqual(sorted(res["buckets"]), ["same_day"])
+        errs = sorted(self.log_err(20, ist) for ist in ists)
+        b = res["buckets"]["same_day"]
+        self.assertFalse(b["pooled"])
+        self.assertEqual(b["n"], 4)
+        # lineare Interpolation: 10-%-Quantil bei Position 0.3, 90-%-Quantil bei 2.7
+        self.assertAlmostEqual(b["q_lo"], errs[0] * 0.7 + errs[1] * 0.3)
+        self.assertAlmostEqual(b["q_hi"], errs[2] * 0.3 + errs[3] * 0.7)
+
+    def test_window_cuts_old_made_dates(self):
+        t = hour_ts(2026, 10, 13, 10)
+        made_new = NOW_TS - 3600                      # 13.10., im 3-Tage-Fenster
+        made_old = NOW_TS - 5 * DAY - 3600            # 8.10., vor dem 3-Tage-Fenster
+        self.add_samples("EVO Alpha", [(t, 20)])
+        write_csv(self.snap_dir, [
+            snap_row("2026-10-13", made_new, "EVO Alpha", t, 22, 20, 24),
+            snap_row("2026-10-08", made_old, "EVO Alpha", t, 50, 45, 55),
+        ])
+        res = calibration(self.snap_dir, self.store, TZ, NOW_TS,
+                          window_days=3, min_n=1)
+        self.assertEqual(res["n"], 1)
+        self.assertEqual(sorted(res["buckets"]), ["same_day"])
+        # nur die neue Zeile zaehlt: Fehler log((20+3)/(22+3)), nicht der 50er
+        self.assertAlmostEqual(res["buckets"]["same_day"]["q_lo"],
+                               self.log_err(22, 20))
+        # evaluate wertet beide Zeilen (kein Fenster)
+        ev = evaluate(self.snap_dir, self.store, TZ, NOW_TS)
+        self.assertEqual(ev["days"], 2)
+
+    def test_thin_group_falls_back_to_pooled(self):
+        # same_day mit 3 Werten (min_n 4 -> zu duenn), 1d mit 4 Werten
+        t_same = [hour_ts(2026, 10, 13, 6 + i) for i in range(3)]
+        t_1d = [hour_ts(2026, 10, 13, 6 + i) for i in range(4)]
+        for target in t_same + t_1d:
+            self.add_samples("EVO Alpha", [(target, 30)])
+        rows = [snap_row("2026-10-13", NOW_TS - 3600, "EVO Alpha", t, 20, 18, 22)
+                for t in t_same]
+        rows += [snap_row("2026-10-12", NOW_TS - DAY - 3600, "EVO Alpha", t, 20, 18, 22)
+                 for t in t_1d]
+        write_csv(self.snap_dir, rows)
+
+        res = calibration(self.snap_dir, self.store, TZ, NOW_TS, min_n=4)
+        self.assertEqual(res["n"], 7)
+        self.assertEqual(sorted(res["buckets"]), ["1d", "same_day"])
+        own = res["buckets"]["1d"]
+        self.assertFalse(own["pooled"])
+        self.assertEqual(own["n"], 4)
+        pooled = res["buckets"]["same_day"]
+        self.assertTrue(pooled["pooled"])
+        self.assertEqual(pooled["n"], 3)
+        # Pooled-Quantile ueber alle 7 identischen Fehler
+        e = self.log_err(20, 30)
+        self.assertAlmostEqual(pooled["q_lo"], e)
+        self.assertAlmostEqual(pooled["q_hi"], e)
+        self.assertAlmostEqual(own["q_lo"], e)
+
+    def test_too_few_values_omit_bucket(self):
+        t = hour_ts(2026, 10, 13, 10)
+        self.add_samples("EVO Alpha", [(t, 20)])
+        write_csv(self.snap_dir, [
+            snap_row("2026-10-13", NOW_TS - 3600, "EVO Alpha", t, 22, 20, 24),
+        ])
+        res = calibration(self.snap_dir, self.store, TZ, NOW_TS, min_n=500)
+        self.assertEqual(res, {"window_days": 14, "n": 1, "buckets": {}})
+
+    def test_empty_and_missing_directory(self):
+        res = calibration(self.snap_dir, self.store, TZ, NOW_TS)
+        self.assertEqual(res, {"window_days": 14, "n": 0, "buckets": {}})
+        res = calibration(Path(self.tmp.name) / "gibtsnicht", self.store, TZ, NOW_TS)
+        self.assertEqual(res, {"window_days": 14, "n": 0, "buckets": {}})
+
+    def test_apply_calibration_groups_by_calendar_day(self):
+        calib = {"window_days": 14, "n": 0, "buckets": {
+            # Fehler auf Log-Skala: q_lo = log(0.5), q_hi = log(2)
+            "same_day": {"q_lo": math.log(0.5), "q_hi": math.log(2.0),
+                         "n": 100, "pooled": False},
+            "1d": {"q_lo": math.log(0.4), "q_hi": math.log(2.5),
+                   "n": 100, "pooled": False},
+        }}
+        now = NOW_TS
+        same_day_ts = int((NOW + timedelta(hours=3)).timestamp())       # 13.10. 15:00
+        one_day_ts = int((NOW + timedelta(days=1, hours=3)).timestamp())  # 14.10. 15:00
+        three_day_ts = int((NOW + timedelta(days=3)).timestamp())       # 16.10., ohne Gruppe
+        points = [
+            {"ts": same_day_ts, "est": 47.0, "lo": 40.0, "hi": 54.0},
+            {"ts": one_day_ts, "est": 47.0, "lo": 40.0, "hi": 54.0},
+            {"ts": three_day_ts, "est": 47.0, "lo": 40.0, "hi": 54.0},
+            {"ts": same_day_ts, "est": None, "lo": None, "hi": None},
+        ]
+        self.assertTrue(apply_calibration(points, calib, now, TZ))
+        # same_day: (47+3)*0.5-3 = 22, (47+3)*2-3 = 97
+        self.assertEqual(points[0]["lo"], 22.0)
+        self.assertEqual(points[0]["hi"], 97.0)
+        # 1d: (47+3)*0.4-3 = 17, (47+3)*2.5-3 = 122
+        self.assertEqual(points[1]["lo"], 17.0)
+        self.assertEqual(points[1]["hi"], 122.0)
+        # 16.10. -> 2_3d, keine Gruppe: Band bleibt Modell-Band
+        self.assertEqual(points[2]["lo"], 40.0)
+        self.assertEqual(points[2]["hi"], 54.0)
+        # est None bleibt unberuehrt
+        self.assertIsNone(points[3]["lo"])
+        self.assertIsNone(points[3]["hi"])
+
+    def test_apply_calibration_clamps_at_zero_and_empty_calib(self):
+        calib = {"window_days": 14, "n": 5, "buckets": {
+            "same_day": {"q_lo": math.log(0.01), "q_hi": math.log(2.0),
+                         "n": 5, "pooled": False},
+        }}
+        p = {"ts": NOW_TS + 3600, "est": 1.0, "lo": 0.0, "hi": 2.0}
+        self.assertTrue(apply_calibration([p], calib, NOW_TS, TZ))
+        self.assertEqual(p["lo"], 0.0)
+        self.assertEqual(p["hi"], 5.0)
+        self.assertFalse(apply_calibration([p], {"window_days": 14, "n": 0, "buckets": {}},
+                                          NOW_TS, TZ))
+        self.assertEqual(p["lo"], 0.0)
+        self.assertEqual(p["hi"], 5.0)
 
 
 if __name__ == "__main__":
