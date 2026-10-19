@@ -38,6 +38,10 @@ Das Repo ist öffentlich und enthält nur Code und Besucherzahlen, keine Secrets
 
 Im Static-Modus liegen die API-Antworten als JSON-Dateien neben der `index.html` (`api/status.json`, `api/gyms.json`, `api/gym/<slug>.json`, `api/weekly/<slug>.json`). Der Button „Jetzt abrufen“ ist dort ausgeblendet.
 
+## Als App installieren
+
+Die Seite ist eine installierbare Web-App: Auf Android/Chrome über das Menü „App installieren“ bzw. „Zum Startbildschirm hinzufügen“, auf dem iPhone über Safari → Teilen → „Zum Home-Bildschirm“, im Desktop-Chrome/Edge über das Installieren-Symbol in der Adresszeile. Ein kleiner Service Worker fragt immer zuerst das Netz nach dem frischen Stand und zeigt offline die zuletzt gesehene Seite. Neue Icons erzeugt man mit `python3 tools/make_icons.py`.
+
 ## Lokal betreiben
 
 ```bash

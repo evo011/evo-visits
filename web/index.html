@@ -14,6 +14,10 @@ try {
 <meta name="theme-color" content="#151617" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317181a'/%3E%3Crect x='8.5' y='50' width='4' height='14' fill='%23f4f4f1'/%3E%3Crect x='15.5' y='42' width='4' height='22' fill='%23f4f4f1'/%3E%3Crect x='22.5' y='34' width='4' height='30' fill='%23f4f4f1'/%3E%3Crect x='29.5' y='26' width='4' height='38' fill='%23f4f4f1'/%3E%3Crect x='36.5' y='38' width='4' height='26' fill='%23f4f4f1'/%3E%3Crect x='43.5' y='46' width='4' height='18' fill='%23f4f4f1'/%3E%3Crect x='50.5' y='54' width='4' height='10' fill='%232d8a4a'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="EVO Auslastung">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face {
@@ -1903,6 +1907,9 @@ if (STATIC) {
 }
 refresh();
 setInterval(() => refresh(true), STATIC ? 5 * 60e3 : 60e3);
+</script>
+<script>
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 </script>
 </body>
 </html>

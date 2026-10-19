@@ -1,3 +1,4 @@
+import json
 import random
 import tempfile
 import threading
@@ -202,7 +203,7 @@ class ServerAppTestCase(unittest.TestCase):
 
 
 class FontsRouteTestCase(unittest.TestCase):
-    """GET /fonts/<name> ueber einen echten HTTP-Server auf 127.0.0.1."""
+    """GET /fonts/<name>, PWA-Dateien und Icons ueber einen echten HTTP-Server auf 127.0.0.1."""
 
     @classmethod
     def setUpClass(cls):
@@ -249,6 +250,38 @@ class FontsRouteTestCase(unittest.TestCase):
 
     def test_font_traversal_plain(self):
         self.assertEqual(self.get_expect_error("/fonts/../x"), 404)
+
+    def test_manifest(self):
+        status, ctype, body = self.get("/manifest.webmanifest")
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "application/manifest+json")
+        data = json.loads(body)
+        self.assertEqual(data["name"], "EVO Auslastung")
+        self.assertEqual(data["start_url"], "./")
+
+    def test_service_worker(self):
+        status, ctype, body = self.get("/sw.js")
+        self.assertEqual(status, 200)
+        self.assertIn("javascript", ctype)
+        self.assertIn("addEventListener", body.decode("utf-8"))
+
+    def test_icon_png(self):
+        status, ctype, body = self.get("/icons/icon-192.png")
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "image/png")
+        self.assertEqual(body, (WEB_DIR / "icons" / "icon-192.png").read_bytes())
+        self.assertTrue(body.startswith(b"\x89PNG"))
+
+    def test_icon_svg(self):
+        status, ctype, _ = self.get("/icons/icon.svg")
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "image/svg+xml")
+
+    def test_icon_missing(self):
+        self.assertEqual(self.get_expect_error("/icons/gibtsnicht.png"), 404)
+
+    def test_icon_traversal_encoded(self):
+        self.assertEqual(self.get_expect_error("/icons/..%2Fconfig.py"), 404)
 
 
 class CollectorTestCase(unittest.TestCase):

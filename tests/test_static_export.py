@@ -1,4 +1,5 @@
 import json
+import struct
 import tempfile
 import unittest
 from datetime import datetime, timedelta
@@ -52,6 +53,9 @@ class ExportSiteTestCase(unittest.TestCase):
         # veraltete Schriftdatei, die ersetzt werden muss
         (self.out / "fonts").mkdir(exist_ok=True)
         (self.out / "fonts" / "alt.woff2").write_bytes(b"alt")
+        # veraltetes Icon, das ersetzt werden muss
+        (self.out / "icons").mkdir(exist_ok=True)
+        (self.out / "icons" / "alt.png").write_bytes(b"alt")
 
         ctx = FakeContext(weather_map=synth_weather())
         res = export_site(self.cfg, self.store, self.out, ctx=ctx, now=NOW_TS)
@@ -71,6 +75,38 @@ class ExportSiteTestCase(unittest.TestCase):
         self.assertFalse((self.out / "fonts" / "alt.woff2").exists())
         self.assertNotIn("fonts.googleapis.com", html)
         self.assertIn("fonts/archivo.woff2", html)
+
+        # PWA: Manifest, Service Worker und Icons mitgeliefert, Altes geloescht
+        self.assertTrue((self.out / "manifest.webmanifest").is_file())
+        self.assertTrue((self.out / "sw.js").is_file())
+        for icon in ("icon.svg", "icon-192.png", "icon-512.png",
+                     "icon-maskable-512.png", "apple-touch-icon.png"):
+            self.assertTrue((self.out / "icons" / icon).is_file(), icon)
+        self.assertFalse((self.out / "icons" / "alt.png").exists())
+
+        manifest = json.loads((self.out / "manifest.webmanifest").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["name"], "EVO Auslastung")
+        self.assertEqual(manifest["start_url"], "./")
+        self.assertEqual(manifest["display"], "standalone")
+
+        def png_size(p):
+            # Breite/Hoehe aus dem IHDR-Chunk (Bytes 16-24)
+            return struct.unpack(">II", p.read_bytes()[16:24])
+
+        for icon in manifest["icons"]:
+            p = self.out / icon["src"]
+            self.assertTrue(p.is_file(), icon["src"])
+            if p.name.endswith(".png"):
+                w, h = png_size(p)
+                self.assertEqual(icon["sizes"], f"{w}x{h}", icon["src"])
+
+        # index.html verweist auf Manifest und Apple-Icon; der Static-Marker
+        # sitzt vor dem App-Script, die SW-Registrierung dahinter
+        self.assertIn('rel="manifest"', html)
+        self.assertIn('rel="apple-touch-icon"', html)
+        self.assertIn("serviceWorker.register", html)
+        self.assertLess(html.index("window.EVO_STATIC"), html.index('"use strict"'))
+        self.assertGreater(html.index("serviceWorker.register"), html.index('"use strict"'))
 
         def load(p):
             return json.loads((self.out / p).read_text(encoding="utf-8"))

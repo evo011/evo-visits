@@ -382,6 +382,19 @@ def make_handler(app: App):
         def log_message(self, fmt, *args):  # ruhig bleiben, nur Fehler loggen
             pass
 
+        def _send_icon(self, name: str) -> None:
+            # Nur schlichte Dateinamen aus web/icons, kein Pfad-Traversal
+            if not FONT_NAME_RE.fullmatch(name) or ".." in name:
+                self._send(404, b"not found", "text/plain")
+                return
+            path = WEB_DIR / "icons" / name
+            if not path.is_file():
+                self._send(404, b"not found", "text/plain")
+                return
+            ctype = "image/svg+xml" if name.endswith(".svg") else "image/png"
+            self._send(200, path.read_bytes(), ctype,
+                       {"Cache-Control": "public, max-age=604800"})
+
         def _send_font(self, name: str) -> None:
             # Nur schlichte Dateinamen aus web/fonts, kein Pfad-Traversal
             if not FONT_NAME_RE.fullmatch(name) or ".." in name:
@@ -418,6 +431,14 @@ def make_handler(app: App):
                     self._send(200, (WEB_DIR / "index.html").read_bytes(), "text/html; charset=utf-8")
                 elif method == "GET" and url.path.startswith("/fonts/"):
                     self._send_font(url.path[len("/fonts/"):])
+                elif method == "GET" and url.path == "/manifest.webmanifest":
+                    self._send(200, (WEB_DIR / "manifest.webmanifest").read_bytes(),
+                               "application/manifest+json")
+                elif method == "GET" and url.path == "/sw.js":
+                    self._send(200, (WEB_DIR / "sw.js").read_bytes(),
+                               "text/javascript; charset=utf-8")
+                elif method == "GET" and url.path.startswith("/icons/"):
+                    self._send_icon(url.path[len("/icons/"):])
                 elif method == "GET" and url.path == "/api/status":
                     self._json(app.api_status(q))
                 elif method == "GET" and url.path == "/api/gyms":

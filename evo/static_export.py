@@ -63,10 +63,10 @@ def _cleanup_old(out_dir: Path, subdir: str, keep: set) -> None:
             p.unlink()
 
 
-def _copy_fonts(out_dir: Path, written: list) -> None:
-    """web/fonts nach out_dir/fonts kopieren; alte Dateien dort vorher entfernen."""
-    src = WEB_DIR / "fonts"
-    dst = out_dir / "fonts"
+def _copy_dir(name: str, out_dir: Path, written: list) -> None:
+    """web/<name> nach out_dir/<name> kopieren; alte Dateien dort vorher entfernen."""
+    src = WEB_DIR / name
+    dst = out_dir / name
     if dst.is_dir():
         for p in dst.iterdir():
             if p.is_file():
@@ -78,6 +78,16 @@ def _copy_fonts(out_dir: Path, written: list) -> None:
         if p.is_file():
             target = dst / p.name
             target.write_bytes(p.read_bytes())
+            written.append(target)
+
+
+def _copy_pwa_files(out_dir: Path, written: list) -> None:
+    """Manifest, Service Worker und Icons fuer die installierbare App."""
+    for fname in ("manifest.webmanifest", "sw.js"):
+        src = WEB_DIR / fname
+        if src.is_file():
+            target = out_dir / fname
+            target.write_bytes(src.read_bytes())
             written.append(target)
 
 
@@ -131,6 +141,8 @@ def export_site(cfg: Config, store: Store, out_dir: Path, ctx=None,
     _cleanup_old(out_dir, "gym", gym_keep)
     _cleanup_old(out_dir, "weekly", weekly_keep)
 
-    _copy_fonts(out_dir, written)
+    _copy_dir("fonts", out_dir, written)
+    _copy_dir("icons", out_dir, written)
+    _copy_pwa_files(out_dir, written)
 
     return {"gyms": len(gyms), "files": len(written), "out": str(out_dir), "app": app}
