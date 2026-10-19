@@ -170,8 +170,8 @@ select {
 }
 .banner { background: var(--chalk-2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
 .banner strong { font-weight: 650; }
-.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 16px; max-width: 100%; }
-.filters label { font-size: 13px; font-weight: 500; color: var(--ink-2); display: inline-flex; gap: 8px; align-items: center; }
+.ctl-row { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; margin: 4px 0 12px; max-width: 100%; }
+.ctl-row label { font-size: 13px; font-weight: 500; color: var(--ink-2); display: inline-flex; gap: 8px; align-items: center; }
 .seg { display: inline-flex; border-radius: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; gap: 4px; max-width: 100%; }
 .seg::-webkit-scrollbar { display: none; }
 .seg button { border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; background: var(--chalk-2); color: var(--ink); font-size: 15px; font-weight: 600; white-space: nowrap; }
@@ -197,6 +197,13 @@ select {
 .dep .wxline { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--ink-2); }
 .dep .note { font-size: 13px; color: var(--ink-3); }
 #bestCard .seg button, #bestDur button { min-height: 40px; }
+#timeGrid { display: grid; grid-template-columns: auto repeat(6, minmax(0, 1fr)); gap: 4px; margin: 10px 0 14px; max-width: 100%; }
+#timeGrid button { background: var(--chalk-2); border-radius: 8px; min-height: 40px; padding: 2px 2px; min-width: 0; }
+#timeGrid button[aria-pressed="true"] { background: var(--ink); }
+#timeGrid .tg-h { display: grid; place-items: center; line-height: 1.25; }
+#timeGrid .tg-h .n { font-size: 13px; font-weight: 500; color: var(--ink-2); hyphens: auto; -webkit-hyphens: auto; overflow-wrap: anywhere; }
+#timeGrid .tg-h .h { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+#timeGrid .tg-d { font-size: 15px; font-weight: 600; color: var(--ink); }
 @media (max-width: 559px) {
   .dep { display: block; width: 100%; }
   .dep thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
@@ -261,8 +268,6 @@ td.num, th.num { text-align: right; }
 td.nw { white-space: nowrap; }
 tbody tr.sel td { background: var(--chalk-2); }
 #overview tbody tr { cursor: pointer; }.muted { color: var(--text-muted); }
-.inline-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--text-secondary); }
-.inline-controls select { padding: 0 28px 0 10px; min-width: 68px; background-position: right 8px center; text-align: left; font-size: 13px; min-height: 32px; }
 section.empty { text-align: center; padding: 48px 16px; color: var(--text-secondary); }
 section.empty code, .banner code { background: var(--chalk-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 .err { color: var(--critical); }
@@ -404,18 +409,18 @@ footer a { color: var(--ink-2); text-decoration: underline; }
     <section id="bestCard">
       <h2>Beste Zeit</h2>
       <p class="sub">Wann du am meisten Platz hast – aus Prognose und Historie.</p>
-      <details id="bestSettings"><summary id="bestSummary"></summary>
-        <div class="inline-controls" id="bestControls">
-          <span class="seg" id="bestDays" role="group" aria-label="Wochentage"></span>
-          <span>Mo–Fr von <select id="bestWkFrom"></select> bis <select id="bestWkTo"></select> Uhr</span>
-          <span>Sa/So von <select id="bestWeFrom"></select> bis <select id="bestWeTo"></select> Uhr</span>
-          <span>Dauer <span class="seg" id="bestDur">
+      <h3>Wann kannst du?</h3>
+      <p class="mini">Tippe an, wann du Zeit hast. Ein Tippen auf Wochentag oder Tageszeit wählt die ganze Zeile oder Spalte.</p>
+      <div id="timeGrid" role="group" aria-label="Deine Zeiten"></div>
+      <div class="ctl-row">
+        <label>Dauer
+          <span class="seg" id="bestDur">
             <button type="button" data-dur="60">60 min</button>
             <button type="button" data-dur="90">90 min</button>
             <button type="button" data-dur="120">120 min</button>
-          </span></span>
-        </div>
-      </details>
+          </span>
+        </label>
+      </div>
       <p class="perfectline" id="perfect"></p>
       <div class="cols">
         <div>
@@ -431,20 +436,10 @@ footer a { color: var(--ink-2); text-decoration: underline; }
     </section>
 
     <section id="fcCard">
-      <h2 id="fcTitle">Verlauf und Prognose</h2>
+      <h2 id="fcTitle">Prognose</h2>
       <p class="sub" id="fcSub"></p>
-      <div class="legend" id="fcLegend"></div>
-      <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
-      <div class="filters" role="group" aria-label="Filter">
-        <label>Verlauf
-          <span class="seg" id="rangeSeg">
-            <button type="button" data-days="1">Heute</button>
-            <button type="button" data-days="7">7 Tage</button>
-            <button type="button" data-days="30">30 Tage</button>
-            <button type="button" data-days="0">Alles</button>
-          </span>
-        </label>
-        <label>Prognose
+      <div class="ctl-row">
+        <label>Zeitraum
           <span class="seg" id="horizonSeg">
             <button type="button" data-h="24">24 Std</button>
             <button type="button" data-h="72">3 Tage</button>
@@ -452,8 +447,20 @@ footer a { color: var(--ink-2); text-decoration: underline; }
           </span>
         </label>
       </div>
+      <div class="legend" id="fcLegend"></div>
+      <div class="chart" id="fcChart" tabindex="0" aria-label="Diagramm: gemessene und prognostizierte Besucherzahl"></div>
       <details id="fcTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
       <h3>Verlauf</h3>
+      <div class="ctl-row">
+        <label>Zeitraum
+          <span class="seg" id="rangeSeg">
+            <button type="button" data-days="1">Heute</button>
+            <button type="button" data-days="7">7 Tage</button>
+            <button type="button" data-days="30">30 Tage</button>
+            <button type="button" data-days="0">Alles</button>
+          </span>
+        </label>
+      </div>
       <div class="chart" id="histChart" tabindex="0" aria-label="Diagramm: gemessene Besucherzahl im Zeitverlauf"></div>
       <details id="histTable"><summary>Verlauf als Tabelle (Stundenmittel)</summary><div class="tablewrap"></div></details>
     </section>
@@ -502,18 +509,43 @@ const store = {
 };
 const QUICK = [{ label: "Unterbilk", gym: "EVO Unterbilk" }, { label: "LeFlair", gym: "EVO LeFlair" }];
 const DEFAULT_GYM = "EVO Unterbilk";
-const BEST_DEFAULTS = { wd: [true, true, true, true, true, true, true], wkFrom: 17, wkTo: 22, weFrom: 9, weTo: 19, dur: 60 };
+// Tageszeit-Blöcke: [Name, Startstunde, Endstunde], Ende exklusiv
+const TIME_BLOCKS = [["früh", 6, 9], ["vormittags", 9, 12], ["mittags", 12, 15], ["nachmittags", 15, 18], ["abends", 18, 21], ["spät", 21, 23]];
+function defaultBestGrid() {
+  // Mo–Fr abends und spät, Sa/So vormittags, mittags, nachmittags
+  return Array.from({ length: 7 }, (_, wd) => wd < 5 ? [false, false, false, false, true, true] : [false, true, true, true, false, false]);
+}
+function validBestGrid(grid) {
+  return Array.isArray(grid) && grid.length === 7 && grid.every((row) => Array.isArray(row) && row.length === 6 && row.every((v) => typeof v === "boolean")) && grid.some((row) => row.some(Boolean));
+}
 function loadBest() {
   const saved = store.get("best", null);
-  const best = { ...BEST_DEFAULTS, ...(saved || {}) };
-  if (!Array.isArray(best.wd) || best.wd.length !== 7 || !best.wd.every((v) => typeof v === "boolean") || !best.wd.some(Boolean)) best.wd = [...BEST_DEFAULTS.wd];
-  for (const k of ["wkFrom", "wkTo", "weFrom", "weTo"]) {
-    if (!Number.isInteger(best[k]) || best[k] < 6 || best[k] > 23) best[k] = BEST_DEFAULTS[k];
+  let dur = saved && [60, 90, 120].includes(saved.dur) ? saved.dur : 60;
+  if (saved && saved.v === 2) {
+    if (validBestGrid(saved.grid)) return { v: 2, grid: saved.grid.map((row) => [...row]), dur };
+  } else if (saved && Array.isArray(saved.wd) && saved.wd.length === 7) {
+    // Alter Stand (wd + Stundenfenster) in Blöcke umrechnen: Überschneidung mit dem Tagesfenster
+    const grid = Array.from({ length: 7 }, (_, wd) => {
+      if (!saved.wd[wd]) return Array(6).fill(false);
+      const from = (wd >= 5 ? saved.weFrom : saved.wkFrom) * 60, to = (wd >= 5 ? saved.weTo : saved.wkTo) * 60;
+      return TIME_BLOCKS.map(([, s, e]) => from < e * 60 && s * 60 < to);
+    });
+    if (validBestGrid(grid)) return { v: 2, grid, dur };
   }
-  if (best.wkFrom >= best.wkTo) { best.wkFrom = BEST_DEFAULTS.wkFrom; best.wkTo = BEST_DEFAULTS.wkTo; }
-  if (best.weFrom >= best.weTo) { best.weFrom = BEST_DEFAULTS.weFrom; best.weTo = BEST_DEFAULTS.weTo; }
-  if (![60, 90, 120].includes(best.dur)) best.dur = 60;
-  return best;
+  return { v: 2, grid: defaultBestGrid(), dur };
+}
+function allowedIntervals(row) {
+  // Benachbarte ausgewählte Blöcke zu [vonMin, bisMin] zusammenfassen
+  const out = [];
+  let i = 0;
+  while (i < row.length) {
+    if (!row[i]) { i++; continue; }
+    let j = i;
+    while (j + 1 < row.length && row[j + 1]) j++;
+    out.push([TIME_BLOCKS[i][1] * 60, TIME_BLOCKS[j][2] * 60]);
+    i = j + 1;
+  }
+  return out;
 }
 const state = {
   gym: null, days: store.get("days", 7), horizon: store.get("horizon", 24),
@@ -1332,8 +1364,11 @@ function renderForecast() {
     },
   });
   series.push({ name: "Gemessen", color: c1, points: d.today_actual.length ? d.today_actual : d.history.filter((p) => p[0] >= x0), gap: 40 * 60e3, endLabel: true });
-  $("#fcTitle").textContent = "Verlauf und Prognose";
-  $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · Band = 80 % der erwarteten Werte`;
+  $("#fcTitle").textContent = "Prognose";
+  const bandTxt = d.band && d.band.source === "kalibriert"
+    ? "Band: 80 % laut den echten Prognosefehlern der letzten 14 Tage"
+    : "Band = 80 % der erwarteten Werte";
+  $("#fcSub").textContent = `${state.gym} · ${unitLabel(d.unit)} · ${bandTxt}`;
   const leg = [{ name: "Gemessen", color: c1 }, { name: "Prognose", color: c2, cls: "dash" }, { name: "80-%-Band", color: c2, cls: "band" }];
   if (h === 24) leg.push({ name: "Üblich an diesem Wochentag", color: cr });
   legend($("#fcLegend"), leg);
@@ -1526,12 +1561,11 @@ function quantile(sorted, q) {
   return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
 }
 
-const wdTimes = (wd) => wd >= 5 ? [state.best.weFrom, state.best.weTo] : [state.best.wkFrom, state.best.wkTo];
 const fmtMin = (m) => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
 const dayLabel = (day) => WD[day.weekday] + " " + Number(day.date.slice(8, 10)) + "." + Number(day.date.slice(5, 7)) + ".";
 
 function bestForecastWindows(d) {
-  // Liefert je Prognosetag das Fenster mit dem kleinsten Mittel von est.
+  // Liefert je Prognosetag das Fenster mit dem kleinsten Mittel von est, vollständig in einem Intervall.
   const nowMs = d.now * 1000, step = 15 * 60e3, n = state.best.dur / 15;
   const byDate = new Map();
   for (const p of d.forecast) {
@@ -1542,15 +1576,16 @@ function bestForecastWindows(d) {
   }
   const out = [];
   for (const day of d.days || []) {
-    if (!state.best.wd[day.weekday]) continue;
-    const [fromH, toH] = day.holiday ? [state.best.weFrom, state.best.weTo] : wdTimes(day.weekday);
+    const row = day.holiday ? 6 : day.weekday;
+    const ivs = allowedIntervals(state.best.grid[row]);
+    if (!ivs.length) continue;
     const pts = byDate.get(day.date) || [];
     let win = null;
     for (let i = 0; i + n <= pts.length; i++) {
       const start = pts[i][0];
       if (!(start > nowMs)) continue;
       const dt = new Date(start), startMin = dt.getHours() * 60 + dt.getMinutes();
-      if (startMin < fromH * 60 || startMin + state.best.dur > toH * 60) continue;
+      if (!ivs.some(([from, to]) => startMin >= from && startMin + state.best.dur <= to)) continue;
       let ok = true, sE = 0, sL = 0, sH = 0;
       for (let j = i; j < i + n; j++) {
         const p = pts[j];
@@ -1573,21 +1608,21 @@ function bestWeeklyWindows() {
   const bin = wk.bin_minutes || 15, nSlots = state.best.dur / bin;
   const cands = [];
   for (let wd = 0; wd < 7; wd++) {
-    if (!state.best.wd[wd]) continue;
-    const [fromH, toH] = wdTimes(wd);
-    for (let startMin = fromH * 60; startMin + state.best.dur <= toH * 60; startMin += bin) {
-      const i0 = startMin / bin;
-      const perDate = [];
-      for (const day of wk.days) {
-        if (day.weekday !== wd) continue;
-        const vals = day.values || [];
-        let cnt = 0, sum = 0;
-        for (let j = i0; j < i0 + nSlots; j++) { const v = vals[j]; if (v != null) { cnt++; sum += v; } }
-        if (cnt >= 0.75 * nSlots) perDate.push(sum / cnt);
+    for (const [from, to] of allowedIntervals(state.best.grid[wd])) {
+      for (let startMin = from; startMin + state.best.dur <= to; startMin += bin) {
+        const i0 = startMin / bin;
+        const perDate = [];
+        for (const day of wk.days) {
+          if (day.weekday !== wd) continue;
+          const vals = day.values || [];
+          let cnt = 0, sum = 0;
+          for (let j = i0; j < i0 + nSlots; j++) { const v = vals[j]; if (v != null) { cnt++; sum += v; } }
+          if (cnt >= 0.75 * nSlots) perDate.push(sum / cnt);
+        }
+        if (!perDate.length) continue;
+        perDate.sort((a, b) => a - b);
+        cands.push({ wd, startMin, endMin: startMin + state.best.dur, p75: quantile(perDate, 0.75), typ: quantile(perDate, 0.5), n: perDate.length });
       }
-      if (!perDate.length) continue;
-      perDate.sort((a, b) => a - b);
-      cands.push({ wd, startMin, endMin: startMin + state.best.dur, p75: quantile(perDate, 0.75), typ: quantile(perDate, 0.5), n: perDate.length });
     }
   }
   cands.sort((a, b) => a.p75 - b.p75);
@@ -1598,25 +1633,6 @@ function bestWeeklyWindows() {
     picked.push(c);
   }
   return picked;
-}
-
-
-function updateBestSummary() {
-  const b = state.best;
-  const wd = b.wd;
-  const parts = [];
-  if (!wd.every(Boolean)) {
-    const days = [];
-    if (wd.slice(0, 5).every(Boolean)) days.push("Mo–Fr");
-    else if (wd.slice(0, 5).some(Boolean)) days.push(WD.filter((_, i) => i < 5 && wd[i]).join(", "));
-    if (wd.slice(5).every(Boolean)) days.push("Sa/So");
-    else if (wd[5] || wd[6]) days.push(WD.filter((_, i) => i >= 5 && wd[i]).join(", "));
-    if (days.length) parts.push(days.join(", "));
-  }
-  if (wd.slice(0, 5).some(Boolean)) parts.push(`Mo–Fr ${b.wkFrom}–${b.wkTo} Uhr`);
-  if (wd[5] || wd[6]) parts.push(`Sa/So ${b.weFrom}–${b.weTo} Uhr`);
-  parts.push(`${b.dur} min`);
-  $("#bestSummary").textContent = parts.join(", ");
 }
 
 function dayNote(day) {
@@ -1631,7 +1647,6 @@ function renderBestCard() {
   const d = state.data, unitS = d.unit === "percent" ? "%" : "Pers.";
   const nextTable = $("#nextTable"), weeklyTable = $("#weeklyTable"), note = $("#weeklyNote"), pf = $("#perfect");
   nextTable.textContent = ""; weeklyTable.textContent = ""; note.textContent = ""; pf.textContent = "";
-  updateBestSummary();
 
   // Nächste 7 Tage (Prognose)
   const hasFc = d.forecast.some((p) => p[1] != null);
@@ -1911,30 +1926,72 @@ function initControls() {
     state.horizon = Number(b.dataset.h); store.set("horizon", state.horizon); setPressed(hs, "h", state.horizon);
     if (state.data) { renderForecast(); }
   });
-  const daysSeg = $("#bestDays"), durSeg = $("#bestDur");
-  WD.forEach((w, i) => daysSeg.append(el("button", { type: "button", "data-wd": String(i), "aria-pressed": String(state.best.wd[i]) }, w)));
-  const sel = {};
-  for (const [k, id] of [["wkFrom", "bestWkFrom"], ["wkTo", "bestWkTo"], ["weFrom", "bestWeFrom"], ["weTo", "bestWeTo"]]) {
-    sel[k] = $("#" + id);
-    for (let h = 6; h <= 23; h++) sel[k].append(el("option", { value: h }, String(h)));
-    sel[k].value = state.best[k];
-  }
+  const durSeg = $("#bestDur");
   durSeg.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.dur) === state.best.dur)));
-  const saveBest = () => { store.set("best", state.best); updateBestSummary(); if (state.data) renderBestCard(); };
-  daysSeg.addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b) return;
-    const i = Number(b.dataset.wd);
-    if (state.best.wd[i] && state.best.wd.filter(Boolean).length === 1) return;
-    state.best.wd[i] = !state.best.wd[i];
-    b.setAttribute("aria-pressed", String(state.best.wd[i]));
-    saveBest();
+
+  // Raster „Wann kannst du?“: Kopf Spalten, Wochentage Zeilen
+  const grid = $("#timeGrid");
+  const gridCount = () => state.best.grid.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  const syncGrid = () => {
+    grid.querySelectorAll("button[data-row][data-col]").forEach((b) => {
+      const r = Number(b.dataset.row), c = Number(b.dataset.col);
+      b.setAttribute("aria-pressed", String(state.best.grid[r][c]));
+    });
+  };
+  const afterBestChange = () => {
+    store.set("best", state.best);
+    syncGrid();
+    if (state.data) { renderLead(); renderBand(); renderBestCard(); }
+  };
+  const setCell = (r, c, v) => {
+    if (state.best.grid[r][c] === v) return;
+    if (!v && gridCount() === 1) return; // mindestens eine Zelle bleibt an
+    state.best.grid[r][c] = v;
+    afterBestChange();
+  };
+  grid.append(el("span", { "aria-hidden": "true" }));
+  TIME_BLOCKS.forEach((block, c) => {
+    const b = el("button", { type: "button", class: "tg-h", "data-col": String(c), "aria-label": `Alle Tage ${block[0]}` });
+    b.append(el("span", { class: "n" }, block[0]), el("span", { class: "h" }, `${block[1]}–${block[2]}`));
+    grid.append(b);
   });
-  Object.keys(sel).forEach((k) => sel[k].addEventListener("change", () => { state.best[k] = Number(sel[k].value); saveBest(); }));
+  WD.forEach((w, r) => {
+    grid.append(el("button", { type: "button", class: "tg-d", "data-row": String(r), "aria-label": `Ganzen Tag ${w}` }, w));
+    TIME_BLOCKS.forEach(([, s, e], c) => {
+      grid.append(el("button", {
+        type: "button", "data-row": String(r), "data-col": String(c),
+        "aria-pressed": String(state.best.grid[r][c]),
+        "aria-label": `${w} ${TIME_BLOCKS[c][0]} ${s}–${e} Uhr`,
+      }));
+    });
+  });
+  grid.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const r = b.dataset.row != null ? Number(b.dataset.row) : null;
+    const c = b.dataset.col != null ? Number(b.dataset.col) : null;
+    if (r != null && c != null) {
+      setCell(r, c, !state.best.grid[r][c]);
+    } else if (r != null) {
+      const allOn = state.best.grid[r].every(Boolean);
+      if (!allOn) state.best.grid[r].fill(true);
+      else if (gridCount() - state.best.grid[r].filter(Boolean).length >= 1) state.best.grid[r].fill(false);
+      else return;
+      afterBestChange();
+    } else if (c != null) {
+      const allOn = state.best.grid.every((row) => row[c]);
+      if (!allOn) state.best.grid.forEach((row) => { row[c] = true; });
+      else {
+        if (gridCount() - state.best.grid.filter((row) => row[c]).length < 1) return;
+        state.best.grid.forEach((row) => { row[c] = false; });
+      }
+      afterBestChange();
+    }
+  });
   durSeg.addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     state.best.dur = Number(b.dataset.dur);
     durSeg.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    saveBest();
+    afterBestChange();
   });
   $("#collectBtn").addEventListener("click", async (e) => {
     e.preventDefault();
