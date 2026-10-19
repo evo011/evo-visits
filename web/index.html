@@ -951,20 +951,18 @@ function renderOverview() {
   const t = $("#overview");
   t.textContent = "";
   const thead = el("thead"), hr = el("tr");
-  [["Club", ""], ["Jetzt", "num"], ["Üblich", "num"], ["Abweichung", "num hide-sm"], ["Auslastung", "num"], ["Stand", "num hide-sm"]].forEach(([h, c]) => hr.append(el("th", c ? { class: c } : {}, h)));
+  [["Club", ""], ["Jetzt", "num"], ["Üblich", "num"], ["Abweichung", "num"], ["Stand", "num hide-sm"]].forEach(([h, c]) => hr.append(el("th", c ? { class: c } : {}, h)));
   thead.append(hr); t.append(thead);
   const tb = el("tbody");
   for (const g of state.gyms) {
     const tr = el("tr", { tabindex: "0" });
     if (g.gym === state.gym) tr.classList.add("sel");
-    const pct = g.unit === "percent" ? g.value : (g.capacity ? g.value / g.capacity * 100 : null);
     const dev = g.typical_now ? (g.value - g.typical_now) / Math.max(g.typical_now, 1) * 100 : null;
     const cells = [
       [g.gym, ""],
       [g.fresh ? nf(g.value) + (g.unit === "percent" ? " %" : "") : "–", "num"],
       [g.typical_now == null ? "–" : nf(g.typical_now) + (g.unit === "percent" ? " %" : ""), "num"],
-      [dev == null || !g.fresh ? "–" : (dev > 0 ? "+" : dev < 0 ? "−" : "±") + nf(Math.abs(dev)) + " %", "num hide-sm"],
-      [pct == null ? "–" : nf(pct) + " %", "num"],
+      [dev == null || !g.fresh ? "–" : (dev > 0 ? "+" : dev < 0 ? "−" : "±") + nf(Math.abs(dev)) + " %", "num"],
       [fmtTime(g.last_ts * 1000) + (g.fresh ? "" : " (alt)"), "num muted hide-sm"],
     ];
     for (const [v, c] of cells) tr.append(el("td", c ? { class: c } : {}, v));
@@ -987,7 +985,7 @@ const WD_FULL = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Fre
 
 function renderLead() {
   const d = state.data;
-  const u = d.unit, nowMs = d.now * 1000;
+  const nowMs = d.now * 1000;
   const fresh = d.now - d.last.ts < 40 * 60;
   const cur = fresh ? d.last.value : null;
   const club = gymShort(state.gym);
@@ -1016,17 +1014,14 @@ function renderLead() {
   l2.textContent = "";
   const now = new Date(nowMs);
   const dayWord = WD_FULL[now.getDay()] + daypartWord(now.getHours());
-  const pct = u === "percent" ? cur : (d.capacity && cur != null ? cur / d.capacity * 100 : null);
   if (cur != null && typVal != null && typVal > 0) {
     const ratio = cur / typVal;
     const phrase = ` als sonst am ${dayWord}, üblich sind ~${nf(typVal)}.`;
     if (ratio < 0.8) l2.append(el("span", { class: "g" }, "Ruhiger"), document.createTextNode(phrase));
     else if (ratio <= 1.2) l2.textContent = `Ungefähr wie sonst am ${dayWord}.`;
     else l2.append(el("span", { class: "r" }, "Voller"), document.createTextNode(phrase));
-  } else if (cur != null && pct != null && d.capacity) {
-    if (pct < 70) l2.append(el("span", { class: "g" }, "Eher ruhig"), document.createTextNode(`, der Richtwert von EVO liegt bei ${nf(d.capacity)}.`));
-    else if (pct <= 120) l2.textContent = `Mittel voll, Richtwert ${nf(d.capacity)}.`;
-    else l2.append(el("span", { class: "r" }, "Ziemlich voll"), document.createTextNode(`, deutlich über dem Richtwert von ${nf(d.capacity)}.`));
+  } else if (cur != null) {
+    l2.textContent = "Für diese Uhrzeit gibt es noch keinen Vergleichswert.";
   } else {
     l2.textContent = "";
   }
@@ -1052,7 +1047,6 @@ function renderLead() {
 
   const l4 = $("#leadMeta");
   const parts = [`Stand ${fmtTime(d.last.ts * 1000)}`];
-  if (d.capacity) parts.push(`Richtwert ${nf(d.capacity)}`);
   parts.push(`Datenbasis ${nf(d.n_days)} ${d.n_days === 1 ? "Tag" : "Tage"}`);
   l4.textContent = parts.join(" · ");
 }
