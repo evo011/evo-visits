@@ -1127,6 +1127,7 @@ function renderBand() {
   }
 
   // Bestes Fenster über dem Band
+  let btLabels = null, nowLabels = null;
   if (win) {
     const i0 = Math.max(0, Math.round((win.start - dayStart.getTime()) / SL));
     const i1 = Math.min(N, Math.ceil((win.end - dayStart.getTime()) / SL));
@@ -1142,6 +1143,10 @@ function renderBand() {
       bt.style.left = left + "%";
     }
     best.append(bt);
+    btLabels = { bt, reset: () => {
+      if (left > 70) { bt.style.left = "auto"; bt.style.right = (100 - left - width) + "%"; }
+      else { bt.style.left = left + "%"; bt.style.right = "auto"; }
+    } };
   }
 
   // Striche
@@ -1173,6 +1178,12 @@ function renderBand() {
     else lb.style.left = "3px";
     mk.append(lb);
     box.append(mk);
+    nowLabels = { lb, reset: () => {
+      lb.style.visibility = "";
+      lb.style.transform = pct < 15 ? "none" : "";
+      if (pct > 85) { lb.style.left = "auto"; lb.style.right = "4px"; }
+      else { lb.style.left = pct < 15 ? "4px" : "3px"; lb.style.right = "auto"; }
+    } };
   }
 
   // Ablesung: Zeiger oder Tastatur
@@ -1210,6 +1221,48 @@ function renderBand() {
   const measTxt = lastMeas != null ? `gemessen bis ${fmtTime(lastMeas)}` : "";
   const labelDay = isToday ? "heute" : "für " + (selDay ? dayLabel(selDay) : "diesen Tag");
   box.setAttribute("aria-label", `Belegung ${labelDay} in ${club}${measTxt ? ", " + measTxt : ""}${bestTxt ? ", " + bestTxt : ""}`);
+
+  // Label-Kollision: "jetzt" und "beste Zeit" duerfen sich nicht ueberdecken
+  const clash = () => {
+    const a = btLabels.bt.getBoundingClientRect(), b = nowLabels.lb.getBoundingClientRect();
+    return a.left < b.right + 6 && b.left < a.right + 6 && a.top < b.bottom && b.top < a.bottom;
+  };
+  const fixLabels = () => {
+    if (!btLabels || !nowLabels || $("#content").classList.contains("hidden")) return;
+    btLabels.reset();
+    nowLabels.reset();
+    if (!clash()) return;
+    const bx = $("#bandBox").getBoundingClientRect();
+    const bt = btLabels.bt, lb = nowLabels.lb;
+    // 1. "jetzt" links neben die Linie setzen
+    lb.style.left = "auto";
+    lb.style.right = "3px";
+    if (!clash() && lb.getBoundingClientRect().left >= bx.left) return;
+    // 2. "beste Zeit" 8px rechts neben "jetzt" beginnen lassen
+    nowLabels.reset();
+    const b = lb.getBoundingClientRect();
+    const target = b.right + 8;
+    const cap = bx.right - bt.getBoundingClientRect().width;
+    const x = Math.min(target, cap);
+    if (x > b.right) {
+      bt.style.left = ((x - bx.left) / bx.width * 100) + "%";
+      bt.style.right = "auto";
+      if (!clash()) return;
+    }
+    // 3. "beste Zeit" 8px links neben "jetzt" enden lassen
+    const cap2 = bx.left;
+    const x2 = b.left - 8 - bt.getBoundingClientRect().width;
+    if (x2 >= cap2) {
+      bt.style.left = ((x2 - bx.left) / bx.width * 100) + "%";
+      bt.style.right = "auto";
+      if (!clash()) return;
+    }
+    // 4. Text "jetzt" ausblenden, die Linie bleibt
+    btLabels.reset();
+    nowLabels.reset();
+    lb.style.visibility = "hidden";
+  };
+  requestAnimationFrame(fixLabels);
 
   renderBandDayline(selDay);
 
