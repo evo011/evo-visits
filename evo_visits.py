@@ -9,6 +9,7 @@
   python3 evo_visits.py export         Static-Seite (JSON + index.html) fuer GitHub Pages schreiben
   python3 evo_visits.py export-csv     Monats-Dateien visits-YYYY-MM.csv nach data/ schreiben
   python3 evo_visits.py import-csv     Monats-Dateien aus data/ wieder einlesen
+  python3 evo_visits.py bilk-collect   Schwimm' in Bilk: Tickets + Belegungsplan speichern
   python3 evo_visits.py launchd        macOS-Autostart (LaunchAgent-plist) ausgeben
 """
 
@@ -26,7 +27,8 @@ from evo.store import Store
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
     ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "export",
-                                        "export-csv", "import-csv", "evaluate", "launchd"])
+                                        "export-csv", "import-csv", "evaluate", "bilk-collect",
+                                        "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
@@ -39,6 +41,8 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--out", type=Path, help="Ausgabeverzeichnis fuer 'export' (Default: site/)")
     ap.add_argument("--forecast-snapshot", type=Path,
                     help="export: zusaetzlich Prognose-Schnappschuss in dieses Verzeichnis")
+    ap.add_argument("--force-lanes", action="store_true",
+                    help="bilk-collect: Belegungsplan auch ausserhalb der ersten Viertelstunde laden")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
@@ -163,6 +167,19 @@ def main(argv: list[str]) -> int:
                 line += f", Vorwoche ±{de(m['mae_last_week'])}"
             print(line)
         print(f"{res['days']} Tage Prognosen ausgewertet (seit {res['first_made']}).")
+    elif args.command == "bilk-collect":
+        from evo.bilk import collect
+        from evo.fetch import FetchError
+        try:
+            res = collect(cfg, args.dir or DATA_DIR, force_lanes=args.force_lanes)
+        except FetchError as e:
+            print(f"Bilk-Abruf fehlgeschlagen: {e}", file=sys.stderr)
+            return 1
+        line = f"Bilk: {res['windows']} Zeitfenster, {res['tickets_new']} neu"
+        if res["lanes"] is None:
+            print(line + "; Belegungsplan übersprungen (nur in der ersten Viertelstunde jeder Stunde)")
+        else:
+            print(line + f"; Belegungsplan: {res['lanes']} Slots, {res['lanes_new']} neu")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))
