@@ -106,7 +106,6 @@ header {
 .hd-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
 #stand { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
 #stand.err { color: var(--plate-red); }
-.hd-link { color: var(--ink-2); font-size: 13px; text-decoration: underline; }
 .themeseg { display: inline-flex; gap: 2px; padding: 2px; background: var(--chalk-2); border-radius: 8px; }
 .themeseg button { width: 28px; height: 28px; min-height: 0; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); padding: 0; }
 .themeseg button[aria-checked="true"] { background: var(--ink); color: var(--chalk); }
@@ -143,6 +142,8 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); 
 .seg::-webkit-scrollbar { display: none; }
 .seg button { border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; background: var(--chalk-2); color: var(--ink); font-size: 15px; font-weight: 600; white-space: nowrap; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: var(--chalk); }
+#clubbar { display: flex; gap: 0; margin-top: 10px; }
+#clubbar .seg { border-radius: 8px; }
 
 /* Tafel */
 #boardList { display: flex; flex-direction: column; gap: 2px; }
@@ -225,7 +226,6 @@ footer a { color: var(--ink-2); }
       </span>
       <div class="hd-right">
         <span id="stand"></span>
-        <a class="hd-link" href="../">EVO</a>
         <div class="themeseg" id="themeSeg" role="radiogroup" aria-label="Darstellung">
           <button type="button" role="radio" aria-checked="false" data-mode="auto" tabindex="0" aria-label="Automatisch wie das System" title="Automatisch wie das System"><svg class="ic" aria-hidden="true"><use href="#i-circle-half"/></svg></button>
           <button type="button" role="radio" aria-checked="false" data-mode="light" tabindex="-1" aria-label="Hell" title="Hell"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
@@ -233,6 +233,11 @@ footer a { color: var(--ink-2); }
         </div>
       </div>
     </div>
+    <div id="clubbar"><span class="seg" id="quickChips" role="group" aria-label="Schnellauswahl">
+      <button type="button" aria-pressed="false" data-gym="EVO Unterbilk">Unterbilk</button>
+      <button type="button" aria-pressed="false" data-gym="EVO LeFlair">LeFlair</button>
+      <button type="button" aria-pressed="true">Bilk</button>
+    </span></div>
   </header>
 
   <div id="lead" aria-live="polite">
@@ -581,7 +586,17 @@ async function load() {
   renderAll();
 }
 
+function initQuickChips() {
+  const host = $("#quickChips");
+  host.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-gym]");
+    if (!b) return;
+    location.href = "../?gym=" + encodeURIComponent(b.dataset.gym);
+  });
+}
+
 initTheme();
+initQuickChips();
 load();
 setInterval(() => { if (document.visibilityState === "visible") load(); }, 5 * 60 * 1000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });

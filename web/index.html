@@ -492,7 +492,7 @@ footer a { color: var(--ink-2); text-decoration: underline; }
 
     <details id="runsBox"><summary>Abruf-Protokoll</summary><div class="tablewrap"><table id="runs"></table></div></details>
 
-    <footer><a href="bilk/">Schwimm' in Bilk: freie Bahnen und Online-Tickets</a>. Daten: visits.evofitness.de, Wetter: Open-Meteo, Ferien: OpenHolidays. Schrift: Archivo (OFL), Icons: Phosphor (MIT). <a class="csvlink" href="/api/export.csv" download>Daten als CSV</a></footer>
+    <footer>Daten: visits.evofitness.de, Wetter: Open-Meteo, Ferien: OpenHolidays. Schrift: Archivo (OFL), Icons: Phosphor (MIT). <a class="csvlink" href="/api/export.csv" download>Daten als CSV</a></footer>
   </section>
 </main>
 
@@ -507,7 +507,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem("evo." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem("evo." + k, JSON.stringify(v)); } catch {} },
 };
-const QUICK = [{ label: "Unterbilk", gym: "EVO Unterbilk" }, { label: "LeFlair", gym: "EVO LeFlair" }];
+const QUICK = [{ label: "Unterbilk", gym: "EVO Unterbilk" }, { label: "LeFlair", gym: "EVO LeFlair" }, { label: "Bilk", href: "bilk/" }];
 const DEFAULT_GYM = "EVO Unterbilk";
 // Tageszeit-Blöcke: [Name, Startstunde, Endstunde], Ende exklusiv
 const TIME_BLOCKS = [["früh", 6, 9], ["vormittags", 9, 12], ["mittags", 12, 15], ["nachmittags", 15, 18], ["abends", 18, 21], ["spät", 21, 23]];
@@ -548,7 +548,7 @@ function allowedIntervals(row) {
   return out;
 }
 const state = {
-  gym: null, days: store.get("days", 7), horizon: store.get("horizon", 24),
+  gym: new URLSearchParams(location.search).get("gym") || null, days: store.get("days", 7), horizon: store.get("horizon", 24),
   best: loadBest(), status: null, gyms: [], data: null, weekly: null, bandDay: null, accuracy: null,
 };
 
@@ -1835,6 +1835,13 @@ function renderQuickChips() {
   host.textContent = "";
   const names = state.gyms.map((g) => g.gym);
   for (const q of QUICK) {
+    if (q.href) {
+      if (!STATIC) continue;
+      const b = el("button", { type: "button", "aria-pressed": "false" }, q.label);
+      b.addEventListener("click", () => { location.href = q.href; });
+      host.append(b);
+      continue;
+    }
     if (!names.includes(q.gym)) continue;
     const b = el("button", { type: "button", "aria-pressed": String(state.gym === q.gym) }, q.label);
     b.addEventListener("click", () => selectGym(q.gym));

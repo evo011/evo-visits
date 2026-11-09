@@ -37,7 +37,17 @@ class BilkPageTestCase(unittest.TestCase):
             self.assertTrue(icon["src"].startswith("../icons/"), icon["src"])
 
     def test_index_links_to_bilk(self):
-        self.assertIn('href="bilk/"', INDEX.read_text(encoding="utf-8"))
+        self.assertIn('href: "bilk/"', INDEX.read_text(encoding="utf-8"))
+
+    def test_index_reads_gym_from_url(self):
+        self.assertIn(
+            'URLSearchParams(location.search).get("gym")',
+            INDEX.read_text(encoding="utf-8"),
+        )
+
+    def test_page_has_quick_selection(self):
+        for text in ('id="quickChips"', "Unterbilk", "LeFlair", "../?gym="):
+            self.assertIn(text, self.html)
 
     def test_visible_text_uses_real_umlauts(self):
         self.assertIsNone(re.search(r"ge(oe|ae|ue)ffnet", self.html))
