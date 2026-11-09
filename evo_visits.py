@@ -10,6 +10,7 @@
   python3 evo_visits.py export-csv     Monats-Dateien visits-YYYY-MM.csv nach data/ schreiben
   python3 evo_visits.py import-csv     Monats-Dateien aus data/ wieder einlesen
   python3 evo_visits.py bilk-collect   Schwimm' in Bilk: Tickets + Belegungsplan speichern
+  python3 evo_visits.py bilk-export    Schwimm' in Bilk: Seite (JSON + index.html) schreiben
   python3 evo_visits.py launchd        macOS-Autostart (LaunchAgent-plist) ausgeben
 """
 
@@ -28,7 +29,7 @@ def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="EVO Visits Tracker")
     ap.add_argument("command", choices=["serve", "collect", "probe", "demo", "context", "export",
                                         "export-csv", "import-csv", "evaluate", "bilk-collect",
-                                        "launchd"])
+                                        "bilk-export", "launchd"])
     ap.add_argument("--config", type=Path, default=None, help="Pfad zu config.json")
     ap.add_argument("--port", type=int, help="Port fuer das Dashboard")
     ap.add_argument("--interval", type=int, help="Abrufintervall in Minuten")
@@ -172,7 +173,7 @@ def main(argv: list[str]) -> int:
         from evo.fetch import FetchError
         try:
             res = collect(cfg, args.dir or DATA_DIR, force_lanes=args.force_lanes)
-        except FetchError as e:
+        except (FetchError, ValueError) as e:
             print(f"Bilk-Abruf fehlgeschlagen: {e}", file=sys.stderr)
             return 1
         line = f"Bilk: {res['windows']} Zeitfenster, {res['tickets_new']} neu"
@@ -180,6 +181,10 @@ def main(argv: list[str]) -> int:
             print(line + "; Belegungsplan übersprungen (nur in der ersten Viertelstunde jeder Stunde)")
         else:
             print(line + f"; Belegungsplan: {res['lanes']} Slots, {res['lanes_new']} neu")
+    elif args.command == "bilk-export":
+        from evo.bilk_export import export_bilk
+        res = export_bilk(args.dir or DATA_DIR, args.out or Path("site"))
+        print(f"Bilk-Seite geschrieben: {res['out']} ({res['days']} Tage)")
     elif args.command == "launchd":
         print(LAUNCHD.format(python=sys.executable, script=PROJECT_DIR / "evo_visits.py",
                              cwd=PROJECT_DIR, log=DATA_DIR / "server.log"))
