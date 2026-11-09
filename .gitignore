@@ -2,6 +2,7 @@
 data/*
 !data/visits-*.csv
 !data/weather-*.csv
+!data/bilk-*.csv
 !data/forecasts/
 !data/forecasts/*.csv
 site/

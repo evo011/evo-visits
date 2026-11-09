@@ -9,6 +9,7 @@
 # Jeder Lauf setzt per workflow_dispatch den naechsten an
 # (GITHUB_TOKEN darf workflow_dispatch ausloesen), der Cron ist nur
 # Reserve.
+# Zusaetzlich: Schwimm' in Bilk (Ticketshop + Belegungsplan der Baedergesellschaft) nach data/bilk-*.csv, Seite unter site/bilk/.
 
 name: collect
 
@@ -56,6 +57,10 @@ jobs:
         continue-on-error: true
         run: python3 evo_visits.py collect --respect-window --active-hours 05:45-23:15 --mode api
 
+      - name: Schwimm' in Bilk abrufen
+        continue-on-error: true
+        run: python3 evo_visits.py bilk-collect
+
       - name: Wetter und Ferien auffrischen
         continue-on-error: true
         run: python3 evo_visits.py context
@@ -67,13 +72,17 @@ jobs:
         continue-on-error: true
         run: python3 evo_visits.py export --out site --forecast-snapshot data/forecasts
 
+      - name: Bilk-Seite exportieren
+        continue-on-error: true
+        run: python3 evo_visits.py bilk-export --out site
+
       - name: Daten committen
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           shopt -s nullglob
-          files=(data/visits-*.csv data/weather-*.csv data/forecasts/*.csv)
+          files=(data/visits-*.csv data/weather-*.csv data/forecasts/*.csv data/bilk-*.csv)
           if [ ${#files[@]} -gt 0 ]; then git add "${files[@]}"; fi
           if git diff --cached --quiet; then echo "keine neuen Daten"; exit 0; fi
           git commit -m "data: Besucherzahlen $(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M')"
