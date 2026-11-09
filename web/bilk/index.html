@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+try {
+  var t = JSON.parse(localStorage.getItem("evo.theme"));
+  if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+} catch (e) {}
+</script>
+<meta name="color-scheme" content="light dark">
+<title>Schwimm' in Bilk — Bahnen und Tickets</title>
+<meta name="theme-color" content="#151617" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f4f1" media="(prefers-color-scheme: light)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2317181a'/%3E%3Crect x='8.5' y='50' width='4' height='14' fill='%23f4f4f1'/%3E%3Crect x='15.5' y='42' width='4' height='22' fill='%23f4f4f1'/%3E%3Crect x='22.5' y='34' width='4' height='30' fill='%23f4f4f1'/%3E%3Crect x='29.5' y='26' width='4' height='38' fill='%23f4f4f1'/%3E%3Crect x='36.5' y='38' width='4' height='26' fill='%23f4f4f1'/%3E%3Crect x='43.5' y='46' width='4' height='18' fill='%23f4f4f1'/%3E%3Crect x='50.5' y='54' width='4' height='10' fill='%232d8a4a'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Schwimm' in Bilk">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preload" href="../fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url("../fonts/archivo.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+:root {
+  color-scheme: light;
+  --chalk: #f4f4f1;
+  --chalk-2: #e9e9e4;
+  --ink: #17181a;
+  --ink-2: #45484d;
+  --ink-3: #6b6f75;
+  --steel: #cfd1d2;
+  --plate-green: #2d8a4a;
+  --plate-red: #cc3524;
+  --page: var(--chalk);
+  --surface-1: var(--chalk);
+  --surface-2: var(--chalk-2);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted: var(--ink-3);
+  --grid: var(--steel);
+  --border: var(--steel);
+  --accent: var(--plate-green);
+  --on-accent: var(--chalk);
+  --font: "Archivo", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --chalk: #151617;
+    --chalk-2: #1f2022;
+    --ink: #edece7;
+    --ink-2: #b5b6b2;
+    --ink-3: #8f918d;
+    --steel: #34363a;
+    --plate-green: #55b574;
+    --plate-red: #ee5a46;
+  }
+}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --chalk: #151617;
+  --chalk-2: #1f2022;
+  --ink: #edece7;
+  --ink-2: #b5b6b2;
+  --ink-3: #8f918d;
+  --steel: #34363a;
+  --plate-green: #55b574;
+  --plate-red: #ee5a46;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; }
+button, a, [role="button"] { touch-action: manipulation; }
+button, .seg button { user-select: none; -webkit-user-select: none; }
+body {
+  background-color: var(--page);
+  color: var(--text-primary);
+  font: 15px/1.5 var(--font);
+  font-variant-numeric: tabular-nums;
+  caret-color: var(--ink);
+  min-height: 100vh;
+}
+::selection { background: color-mix(in srgb, var(--plate-green) 28%, transparent); }
+html { scrollbar-color: var(--steel) transparent; }
+a { text-underline-offset: 3px; }
+main { max-width: 880px; margin: 0 auto; padding: 20px 20px calc(48px + env(safe-area-inset-bottom, 0px)); }
+header {
+  position: sticky; top: 0; z-index: 20; background: var(--chalk);
+  border-bottom: 1px solid var(--steel);
+  padding: 12px 20px calc(10px + env(safe-area-inset-top, 0px));
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
+.hd-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; min-width: 0; }
+.brand svg { flex: 0 0 auto; }
+.wordmark { font-size: 15px; font-weight: 650; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hd-right { margin-left: auto; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+#stand { color: var(--ink-3); font-size: 13px; white-space: nowrap; }
+#stand.err { color: var(--plate-red); }
+.hd-link { color: var(--ink-2); font-size: 13px; text-decoration: underline; }
+.themeseg { display: inline-flex; gap: 2px; padding: 2px; background: var(--chalk-2); border-radius: 8px; }
+.themeseg button { width: 28px; height: 28px; min-height: 0; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); padding: 0; }
+.themeseg button[aria-checked="true"] { background: var(--ink); color: var(--chalk); }
+.themeseg .ic { width: 16px; height: 16px; }
+@media (pointer: coarse) { .themeseg button { width: 36px; height: 36px; } }
+@media (max-width: 559px) {
+  #stand { display: none; }
+  .hd-right { gap: 10px; }
+}
+h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 2px; }
+.sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 12px; }
+section { margin-bottom: 40px; }
+section h2 { border-top: 1px solid var(--steel); padding-top: 20px; }
+section:first-of-type h2, #lead { border-top: 0; padding-top: 0; }
+#lead { margin: 24px 0 32px; }
+#lead .l1 { font-size: 32px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.15; color: var(--ink); margin: 0; }
+#lead .l1 b { font-weight: 800; font-stretch: 87.5%; }
+#lead .l2 { font-size: 18px; font-weight: 450; color: var(--ink-2); margin: 6px 0 0; line-height: 1.4; }
+#lead .l3 { font-size: 15px; color: var(--ink-2); margin: 10px 0 0; }
+#lead .l3 b { color: var(--plate-green); font-weight: 650; }
+#lead .l4 { font-size: 13px; color: var(--ink-3); margin: 8px 0 0; }
+@media (max-width: 560px) { #lead .l1 { font-size: 26px; } }
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+button {
+  font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: var(--chalk-2);
+  border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease;
+}
+button:active, .seg button:active { transform: scale(0.97); }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.banner { background: var(--chalk-2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; }
+.banner strong { font-weight: 650; }
+.seg { display: inline-flex; border-radius: 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; gap: 4px; max-width: 100%; margin-bottom: 8px; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; background: var(--chalk-2); color: var(--ink); font-size: 15px; font-weight: 600; white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--chalk); }
+
+/* Tafel */
+#boardList { display: flex; flex-direction: column; gap: 2px; }
+.brow {
+  display: grid; grid-template-columns: 68px minmax(0, 1fr) 96px 74px;
+  align-items: center; gap: 4px 14px; padding: 9px 4px 9px 8px;
+  border-left: 3px solid transparent; border-radius: 4px;
+}
+.brow.now { border-left-color: var(--ink); background: color-mix(in srgb, var(--chalk-2) 55%, transparent); }
+.brow.past { opacity: .45; }
+.brow .t { font-size: 18px; font-weight: 650; font-stretch: 87.5%; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
+.brow .tag { display: block; font-size: 12px; font-weight: 600; font-stretch: 100%; color: var(--ink); }
+.brow .tag.best { color: var(--plate-green); }
+.lanes { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lanes .q { display: flex; gap: 3px; }
+.lanes .q + .q { margin-left: 3px; }
+.stroke { width: 3px; height: 18px; border-radius: 1px; background: var(--ink); }
+.stroke.occ { background: var(--chalk-2); border: 1px solid var(--steel); width: 1px; }
+.lanes .num { font-size: 14px; font-weight: 650; white-space: nowrap; }
+.lanes .num small { font-size: 12px; font-weight: 450; color: var(--ink-3); }
+.tk { min-width: 0; }
+.tk .bar { height: 6px; border-radius: 3px; background: var(--chalk-2); overflow: hidden; margin-bottom: 3px; }
+.tk .bar span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
+.tk .n { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tk .n.none { color: var(--ink-3); }
+.pr { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.pr .euro { font-size: 15px; font-weight: 650; white-space: nowrap; }
+.pr .tier { display: inline-flex; gap: 3px; }
+.pr .tier i { width: 7px; height: 7px; border-radius: 50%; background: var(--chalk-2); border: 1px solid var(--steel); }
+.pr .tier i.on { background: var(--ink); border-color: var(--ink); }
+.pr .tier.l1 i.on { background: var(--plate-green); border-color: var(--plate-green); }
+.pr .tier.l34 i.on { background: var(--plate-red); border-color: var(--plate-red); }
+@media (max-width: 559px) {
+  .brow { grid-template-columns: 52px minmax(0, 1fr) 84px; gap: 4px 10px; }
+  .brow .pr { grid-column: 2 / -1; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; }
+  .lanes { gap: 6px; }
+  .lanes .num { font-size: 13px; }
+  .brow .t { font-size: 16px; }
+}
+
+/* Wer belegt */
+.dep { width: 100%; border-collapse: collapse; }
+.dep td, .dep th { padding: 6px 8px 6px 0; overflow-wrap: break-word; text-align: left; }
+.dep th { font-size: 13px; font-weight: 600; color: var(--ink-3); border-bottom: 1px solid var(--steel); }
+.dep tbody tr { min-height: 44px; }
+.dep tbody tr:nth-child(even) { background: color-mix(in srgb, var(--chalk-2) 60%, transparent); }
+.dep .t { font-size: 15px; font-weight: 650; font-stretch: 87.5%; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dep .who { color: var(--ink-3); font-size: 13px; }
+.dep .who strong { color: var(--ink); font-weight: 650; }
+footer { border-top: 1px solid var(--steel); padding-top: 16px; font-size: 13px; color: var(--ink-3); }
+footer a { color: var(--ink-2); }
+@media (max-width: 559px) {
+  .dep { display: block; width: 100%; }
+  .dep thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .dep tbody { display: block; }
+  .dep tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: baseline; padding: 9px 6px; }
+  .dep td { display: block; padding: 0; min-width: 0; }
+  .dep td.h { display: none; }
+  .dep .who { grid-column: 1 / -1; }
+  .dep tbody tr td:only-child { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, .seg button { transition: none; }
+  button:active, .seg button:active { transform: none; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-sun" viewBox="0 0 256 256"><path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 256 256"><path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,1,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z"/></symbol>
+  <symbol id="i-circle-half" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm8,16.37a86.4,86.4,0,0,1,16,3V212.67a86.4,86.4,0,0,1-16,3Zm32,9.26a87.81,87.81,0,0,1,16,10.54V195.83a87.81,87.81,0,0,1-16,10.54ZM40,128a88.11,88.11,0,0,1,80-87.63V215.63A88.11,88.11,0,0,1,40,128Zm160,50.54V77.46a87.82,87.82,0,0,1,0,101.08Z"/></symbol>
+</svg>
+<main id="app">
+  <header>
+    <div class="hd-row">
+      <span class="brand">
+        <svg width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="12" style="fill:var(--ink)"/><rect x="8.5" y="50" width="4" height="14" style="fill:var(--chalk)"/><rect x="15.5" y="42" width="4" height="22" style="fill:var(--chalk)"/><rect x="22.5" y="34" width="4" height="30" style="fill:var(--chalk)"/><rect x="29.5" y="26" width="4" height="38" style="fill:var(--chalk)"/><rect x="36.5" y="38" width="4" height="26" style="fill:var(--chalk)"/><rect x="43.5" y="46" width="4" height="18" style="fill:var(--chalk)"/><rect x="50.5" y="54" width="4" height="10" style="fill:var(--plate-green)"/></svg>
+        <span class="wordmark">Schwimm' in Bilk</span>
+      </span>
+      <div class="hd-right">
+        <span id="stand"></span>
+        <a class="hd-link" href="../">EVO</a>
+        <div class="themeseg" id="themeSeg" role="radiogroup" aria-label="Darstellung">
+          <button type="button" role="radio" aria-checked="false" data-mode="auto" tabindex="0" aria-label="Automatisch wie das System" title="Automatisch wie das System"><svg class="ic" aria-hidden="true"><use href="#i-circle-half"/></svg></button>
+          <button type="button" role="radio" aria-checked="false" data-mode="light" tabindex="-1" aria-label="Hell" title="Hell"><svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg></button>
+          <button type="button" role="radio" aria-checked="false" data-mode="dark" tabindex="-1" aria-label="Dunkel" title="Dunkel"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="lead" aria-live="polite">
+    <p class="l1" id="lead1"></p>
+    <p class="l2" id="lead2"></p>
+    <p class="l3" id="lead3"></p>
+    <p class="l4">Quelle: Belegungsplan und Ticketshop der Bädergesellschaft Düsseldorf. Wer an der Kasse zahlt, ist nicht mitgezählt.</p>
+  </div>
+
+  <div class="seg" id="daySeg" role="group" aria-label="Tag"></div>
+
+  <section id="board">
+    <h2>Bahnen und Tickets</h2>
+    <p class="sub">Je Stunde: freie Bahnen im 25-m-Becken je Viertelstunde, verkaufte Online-Tickets (Kontingent 75) und Preisstufe.</p>
+    <div id="boardBanner"></div>
+    <div id="boardList"></div>
+  </section>
+
+  <section id="who">
+    <h2>Wer belegt</h2>
+    <p class="sub" id="whoSub"></p>
+    <table class="dep">
+      <thead><tr><th>Zeit</th><th>Becken</th><th>Bahn</th><th>Wer</th></tr></thead>
+      <tbody id="whoBody"></tbody>
+    </table>
+  </section>
+
+  <footer>Daten: <a href="https://www.baeder-duesseldorf.de/belegungsplan/schwimm-in-bilk/">Belegungsplan</a> und <a href="https://shop.baeder-duesseldorf.de/article/1031">Ticketshop</a> der Bädergesellschaft Düsseldorf, stündlich bzw. viertelstündlich abgerufen. Schrift: Archivo (OFL), Icons: Phosphor (MIT).</footer>
+</main>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("evo." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("evo." + k, JSON.stringify(v)); } catch {} },
+};
+let data = null;
+let selDate = null;
+let loadFailed = false;
+
+function el(tag, attrs, text) {
+  const n = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v;
+    else n.setAttribute(k, v);
+  }
+  if (text != null) n.textContent = text;
+  return n;
+}
+function plural(n, one, many) { return n === 1 ? one : many; }
+function min2(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || ""));
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+}
+function span(a, b) {
+  const ma = min2(a), mb = min2(b);
+  if (ma == null || mb == null) return a + "–" + b;
+  const h1 = String(Math.floor(ma / 60)).padStart(2, "0"), m1 = String(ma % 60).padStart(2, "0");
+  const h2 = String(Math.floor(mb / 60)).padStart(2, "0"), m2 = String(mb % 60).padStart(2, "0");
+  return (m1 === "00" ? h1.replace(/^0/, "") : h1 + ":" + m1) + "–" + (m2 === "00" ? h2.replace(/^0/, "") : h2 + ":" + m2);
+}
+function euro(cents) { return (cents / 100).toFixed(2).replace(".", ",") + " €"; }
+function num(n) { return String(n).replace(".", ","); }
+function berlinNow(ts) {
+  const parts = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date((ts == null ? Date.now() : ts * 1000)));
+  const h = parts.find((p) => p.type === "hour").value;
+  const m = parts.find((p) => p.type === "minute").value;
+  return h.padStart(2, "0") + ":" + m.padStart(2, "0");
+}
+function today() { return data && data.days && data.days.length ? data.days[0] : null; }
+function dayByDate(date) {
+  if (!data || !data.days) return null;
+  return data.days.find((d) => d.date === date) || null;
+}
+function selectedDay() { return dayByDate(selDate) || today(); }
+
+function renderStand() {
+  const s = $("#stand");
+  s.classList.toggle("err", loadFailed);
+  if (loadFailed) { s.textContent = "nicht erreichbar"; return; }
+  s.textContent = data && data.generated_at ? "Stand " + berlinNow(data.generated_at) : "";
+}
+
+function renderLead() {
+  const l1 = $("#lead1"), l2 = $("#lead2"), l3 = $("#lead3");
+  l1.textContent = ""; l2.textContent = ""; l3.textContent = "";
+  if (loadFailed) { l1.textContent = "Daten konnten nicht geladen werden."; return; }
+  const day = today();
+  const now = data ? data.now : null;
+  if (!day) return;
+
+  const nowHHMM = berlinNow();
+  const nowMin = min2(nowHHMM);
+  const startMin = min2(day.open_start);
+  const endMin = min2(day.open_end);
+  const sameDay = now && day.date === now.date;
+
+  // l1
+  if (day.status === "geschlossen") {
+    l1.textContent = "Heute geschlossen." + (day.note ? " " + day.note : "");
+  } else if (day.status === "unbekannt") {
+    l1.textContent = "Noch kein Belegungsplan für heute.";
+  } else if (day.status === "geöffnet") {
+    if (sameDay && startMin != null && nowMin < startMin) {
+      l1.textContent = "Öffnet heute um " + day.open_start + " Uhr.";
+    } else if (sameDay && endMin != null && nowMin >= endMin) {
+      l1.textContent = "Heute geschlossen seit " + day.open_end + " Uhr.";
+    } else if (sameDay && now && now.row) {
+      l1.append(el("b", null, now.lanes_free + " von " + now.lanes_total + " Bahnen"));
+      l1.append(document.createTextNode(" frei."));
+    } else {
+      l1.textContent = "Geöffnet von " + day.open_start + " bis " + day.open_end + " Uhr.";
+    }
+  } else {
+    l1.textContent = "Für heute liegt kein Belegungsplan vor.";
+  }
+
+  // l2 – Tickets der aktuellen Zeile
+  const row = sameDay && now ? now.row : (day.rows || []).find((r) => r.now);
+  if (row && row.tickets) {
+    const t = row.tickets;
+    l2.textContent = t.sold + " " + plural(t.sold, "Online-Ticket", "Online-Tickets") +
+      " für " + span(row.start, row.end) + " Uhr verkauft, Preisstufe " + t.tier +
+      " von 4 (" + euro(t.price_cents) + ").";
+  } else if (sameDay && day.status === "geöffnet" && !(startMin != null && nowMin < startMin)) {
+    l2.textContent = "Kein Einlass mehr, Kassenschluss ist eine Stunde vor Schließung.";
+  }
+
+  // l3 – beste Zeit
+  const d0 = data.days[0], d1 = data.days[1];
+  const best = (d0 && d0.best) || (d1 && d1.best) || null;
+  if (best) {
+    const prefix = d0 && d0.best ? "Beste Zeit heute" : "Morgen am besten";
+    const total = best.quarters && best.quarters[0] ? best.quarters[0].total : 6;
+    l3.append(document.createTextNode(prefix + ": "));
+    l3.append(el("b", null, span(best.start, best.end) + " Uhr"));
+    let tail = ", im Schnitt " + num(best.avg_free) + " von " + total + " Bahnen frei";
+    if (best.tickets) tail += ", Preisstufe " + best.tickets.tier;
+    l3.append(document.createTextNode(tail + "."));
+  }
+}
+
+function renderDays() {
+  const seg = $("#daySeg");
+  seg.textContent = "";
+  if (!data || !data.days) return;
+  const names = ["Heute", "Morgen"];
+  data.days.forEach((d, i) => {
+    const b = el("button", { type: "button" }, names[i] || d.label);
+    b.dataset.date = d.date;
+    b.setAttribute("aria-pressed", String(selectedDay() && selectedDay().date === d.date));
+    b.addEventListener("click", () => { selDate = d.date; store.set("bilk.day", selDate); renderAll(); });
+    seg.append(b);
+  });
+}
+
+function lanterns(q) {
+  const wrap = el("span", { class: "q" });
+  const total = q.total;
+  const free = q.free;
+  for (let i = 0; i < total; i++) {
+    wrap.append(el("span", { class: "stroke" + (i >= free ? " occ" : "") }));
+  }
+  wrap.setAttribute("aria-hidden", "true");
+  return wrap;
+}
+
+function renderBoard() {
+  const list = $("#boardList"), banner = $("#boardBanner");
+  list.textContent = ""; banner.textContent = "";
+  const day = selectedDay();
+  if (!day) return;
+  const rows = day.rows || [];
+  if (day.status !== "geöffnet" || !rows.length) {
+    const msg = day.status !== "geöffnet"
+      ? "Geschlossen: " + (day.note || "an diesem Tag ist das Bad geschlossen.")
+      : "Für diesen Tag liegt noch kein Belegungsplan vor.";
+    banner.append(el("div", { class: "banner" }, msg));
+    return;
+  }
+  const bestStart = day.best ? day.best.start : null;
+
+  rows.forEach((row) => {
+    const wrap = el("div", { class: "brow" });
+
+    // Zeit + Markierung
+    const t = el("div");
+    t.append(el("span", null, span(row.start, row.end)));
+    if (row.now) t.append(el("span", { class: "tag" }, "jetzt"));
+    else if (bestStart && row.start === bestStart) t.append(el("span", { class: "tag best" }, "beste Zeit"));
+    wrap.append(t);
+
+    // Bahnen
+    const lanes = el("div", { class: "lanes" });
+    const qs = row.quarters || [];
+    const qwrap = el("span", null);
+    qwrap.style.display = "inline-flex";
+    qs.forEach((q) => qwrap.append(lanterns(q)));
+    lanes.append(qwrap);
+    const frees = qs.map((q) => q.free);
+    const lo = frees.length ? Math.min(...frees) : 0;
+    const hi = frees.length ? Math.max(...frees) : 0;
+    const numEl = el("span", { class: "num" });
+    numEl.append(document.createTextNode(lo === hi ? String(hi) + " frei" : lo + "–" + hi + " frei"));
+    lanes.append(numEl);
+    wrap.append(lanes);
+
+    // Tickets
+    const tk = el("div", { class: "tk" });
+    if (row.tickets) {
+      const tkd = row.tickets;
+      const bar = el("div", { class: "bar" });
+      const fill = el("span");
+      fill.style.width = Math.max(0, Math.min(100, (tkd.sold / Math.max(1, tkd.total)) * 100)) + "%";
+      bar.append(fill);
+      tk.append(bar);
+      tk.append(el("span", { class: "n" }, tkd.sold + " von " + tkd.total));
+    } else {
+      tk.append(el("span", { class: "n none" }, "kein Einlass"));
+    }
+    wrap.append(tk);
+
+    // Preis
+    const pr = el("div", { class: "pr" });
+    if (row.tickets) {
+      pr.append(el("span", { class: "euro" }, euro(row.tickets.price_cents)));
+      const tierEl = el("span", { class: "tier" + (row.tickets.tier === 1 ? " l1" : row.tickets.tier >= 3 ? " l34" : "") });
+      for (let i = 1; i <= 4; i++) tierEl.append(el("i", { class: i <= row.tickets.tier ? "on" : "" }));
+      tierEl.setAttribute("aria-label", "Preisstufe " + row.tickets.tier + " von 4");
+      pr.append(tierEl);
+    }
+    wrap.append(pr);
+
+    if (row.past) wrap.classList.add("past");
+    if (row.now) wrap.classList.add("now");
+    list.append(wrap);
+  });
+}
+
+function renderWho() {
+  const body = $("#whoBody"), sub = $("#whoSub");
+  const day = selectedDay();
+  body.textContent = "";
+  if (!day) { sub.textContent = "Schulen, Vereine und Kurse am gewählten Tag."; return; }
+  sub.textContent = "Schulen, Vereine und Kurse am " + day.label + ".";
+  const blocks = day.blocks || [];
+  if (!blocks.length) {
+    const tr = el("tr");
+    const td = el("td", { class: "who", colspan: "4" }, "Keine Belegungen.");
+    tr.append(td); body.append(tr);
+    return;
+  }
+  blocks.forEach((b) => {
+    const tr = el("tr");
+    tr.append(el("td", { class: "t" }, b.start + "–" + b.end));
+    const pool = /Sportbecken/i.test(b.becken || "") ? "25 m" : "Kursbecken";
+    tr.append(el("td", { class: "h" }, pool));
+    tr.append(el("td", { class: "h" }, b.lanes || "–"));
+    const who = el("td", { class: "who" });
+    who.append(el("strong", null, b.label || ""));
+    if (b.who) who.append(document.createTextNode(" " + b.who));
+    tr.append(who);
+    body.append(tr);
+  });
+}
+
+function renderAll() {
+  renderStand();
+  renderLead();
+  renderDays();
+  renderBoard();
+  renderWho();
+}
+
+function syncThemeMeta(mode) {
+  document.querySelector('meta[name="color-scheme"]').setAttribute("content", mode === "auto" ? "light dark" : mode);
+  let meta = document.getElementById("themeColorForced");
+  if (mode === "auto") {
+    if (meta) meta.remove();
+    return;
+  }
+  if (!meta) {
+    meta = el("meta", { name: "theme-color", id: "themeColorForced" });
+    document.head.append(meta);
+  }
+  meta.setAttribute("content", mode === "light" ? "#f4f4f1" : "#151617");
+}
+function syncThemeSeg(mode) {
+  $("#themeSeg").querySelectorAll("button").forEach((b) => {
+    const on = b.dataset.mode === mode;
+    b.setAttribute("aria-checked", String(on));
+    b.setAttribute("tabindex", on ? "0" : "-1");
+  });
+}
+function currentTheme() {
+  const t = store.get("theme", "auto");
+  return t === "light" || t === "dark" ? t : "auto";
+}
+function applyTheme(mode) {
+  if (mode !== "light" && mode !== "dark") mode = "auto";
+  if (mode === "auto") delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = mode;
+  store.set("theme", mode);
+  syncThemeMeta(mode);
+  renderAll();
+}
+function initTheme() {
+  const themeSeg = $("#themeSeg");
+  const themeBtns = [...themeSeg.querySelectorAll("button")];
+  const themeMode = currentTheme();
+  syncThemeSeg(themeMode);
+  syncThemeMeta(themeMode);
+  themeSeg.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    applyTheme(b.dataset.mode);
+    syncThemeSeg(b.dataset.mode);
+  });
+  themeSeg.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const cur = themeBtns.findIndex((b) => b.getAttribute("aria-checked") === "true");
+    const dir = e.key === "ArrowRight" ? 1 : -1;
+    const next = themeBtns[(cur + dir + themeBtns.length) % themeBtns.length];
+    applyTheme(next.dataset.mode);
+    syncThemeSeg(next.dataset.mode);
+    next.focus();
+  });
+}
+
+async function load() {
+  try {
+    const res = await fetch("api/bilk.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    data = json;
+    loadFailed = false;
+    const want = selDate || store.get("bilk.day", null);
+    selDate = (want && json.days && json.days.some((d) => d.date === want)) ? want : (json.days && json.days[0] ? json.days[0].date : null);
+  } catch (e) {
+    data = null;
+    loadFailed = true;
+  }
+  renderAll();
+}
+
+initTheme();
+load();
+setInterval(() => { if (document.visibilityState === "visible") load(); }, 5 * 60 * 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") load(); });
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("../sw.js").catch(() => {});
+</script>
+</body>
+</html>
+
+
