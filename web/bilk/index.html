@@ -110,6 +110,7 @@ header {
 .themeseg button { width: 28px; height: 28px; min-height: 0; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: var(--ink-3); padding: 0; }
 .themeseg button[aria-checked="true"] { background: var(--ink); color: var(--chalk); }
 .themeseg .ic { width: 16px; height: 16px; }
+.ic { width: 16px; height: 16px; fill: currentColor; vertical-align: -2px; }
 @media (pointer: coarse) { .themeseg button { width: 36px; height: 36px; } }
 @media (max-width: 559px) {
   #stand { display: none; }
@@ -132,7 +133,7 @@ section:first-of-type h2, #lead { border-top: 0; padding-top: 0; }
 button {
   font: inherit; font-size: 15px; font-weight: 600; color: var(--ink); background: var(--chalk-2);
   border: 0; border-radius: 8px; padding: 0 12px; min-height: 40px; cursor: pointer;
-  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 140ms ease;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 button:active, .seg button:active { transform: scale(0.97); }
 button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -145,49 +146,53 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); 
 #clubbar { display: flex; gap: 0; margin-top: 10px; }
 #clubbar .seg { border-radius: 8px; }
 
-/* Tafel */
-#boardList { display: flex; flex-direction: column; gap: 2px; }
-.brow {
-  display: grid; grid-template-columns: 68px minmax(0, 1fr) 96px 74px;
-  align-items: center; gap: 4px 14px; padding: 9px 4px 9px 8px;
-  border-left: 3px solid transparent; border-radius: 4px;
+/* Belegungsband */
+#band { margin: 24px 0 40px; }
+.bandtabs { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; margin-bottom: 10px; }
+.bandtabs::-webkit-scrollbar { display: none; }
+.bandtabs button { background: none; border: 0; border-radius: 0; padding: 0 0 6px; min-height: 0; font-size: 15px; font-weight: 500; color: var(--ink-2); white-space: nowrap; }
+.bandtabs button[aria-selected="true"] { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); }
+.bandread { font-size: 13px; color: var(--ink-2); min-height: 20px; margin: 0 0 4px; }
+.bandread b { font-weight: 650; color: var(--ink); }
+.bandbest { position: relative; height: 18px; font-size: 13px; font-weight: 600; color: var(--plate-green); }
+.bandbest .bl { position: absolute; bottom: 0; height: 2px; background: var(--plate-green); }
+.bandbest .bt { position: absolute; top: 0; white-space: nowrap; }
+.bandnow { position: absolute; bottom: 0; width: 1px; height: 100%; background: var(--ink-3); }
+.bandnow span { position: absolute; top: -15px; left: 3px; font-size: 13px; font-weight: 450; color: var(--ink-3); }
+.bandbox { position: relative; height: 104px; }
+.bandgrid { display: grid; grid-template-columns: repeat(68, minmax(0, 1fr)); gap: 2px; height: 100%; align-items: end; }
+.bandgrid .bar { height: 100%; transform-origin: bottom; border-radius: 1.5px 1.5px 0 0; background: var(--ink); transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1); }
+.bandgrid .bar.best { background: var(--plate-green); }
+.bandgrid .bar.gap { background: transparent; }
+.bandgrid .bar.dim { opacity: .55; }
+.bandgrid .bar.gap.dim { opacity: 1; }
+.bandbase { border-top: 1px solid var(--steel); }
+.bandhours { position: relative; height: 17px; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+.bandhours span { position: absolute; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.bandhours span.first { transform: none; }
+.bandempty { font-size: 15px; color: var(--ink-2); margin: 12px 0; }
+.bandlabel { font-size: 13px; color: var(--ink-3); margin: 6px 0 14px; }
+.tkbox { position: relative; height: 44px; margin-top: 18px; }
+.tkgrid { display: grid; gap: 2px; height: 100%; align-items: end; }
+.tkgrid .tkc { position: relative; height: 100%; display: flex; align-items: flex-end; }
+.tkgrid .tk { position: relative; height: 100%; width: 100%; transform-origin: bottom; border-radius: 1.5px 1.5px 0 0; background: var(--ink-3); }
+.tkgrid .tk.best { background: var(--plate-green); }
+.tkgrid .tk.dim { opacity: .55; }
+.tkv { position: absolute; bottom: 100%; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.hidden { display: none !important; }
+.dep tbody tr.past { opacity: .55; }
+.dep tbody tr.now { font-weight: 650; }
+details { margin-top: 8px; font-size: 13px; }
+details summary { cursor: pointer; color: var(--ink-2); }
+details summary:hover { color: var(--ink); }
+details .tablewrap { max-height: 320px; overflow: auto; margin-top: 6px; }
+@media (max-width: 560px) {
+  .bandbox { height: 80px; }
+  .bandgrid { gap: 1px; }
+  .tkbox { height: 34px; }
+  .tkgrid { gap: 1px; }
 }
-.brow.now { border-left-color: var(--ink); background: color-mix(in srgb, var(--chalk-2) 55%, transparent); }
-.brow.past { opacity: .45; }
-.brow .t { font-size: 18px; font-weight: 650; font-stretch: 87.5%; font-variant-numeric: tabular-nums; white-space: nowrap; line-height: 1.15; }
-.brow .tag { display: block; font-size: 12px; font-weight: 600; font-stretch: 100%; color: var(--ink); }
-.brow .tag.best { color: var(--plate-green); }
-.lanes { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.lanes .q { display: flex; gap: 3px; }
-.lanes .q + .q { margin-left: 3px; }
-.stroke { width: 3px; height: 18px; border-radius: 1px; background: var(--ink); }
-.stroke.occ { background: var(--chalk-2); border: 1px solid var(--steel); width: 1px; }
-.lanes .num { font-size: 14px; font-weight: 650; white-space: nowrap; }
-.lanes .num small { font-size: 12px; font-weight: 450; color: var(--ink-3); }
-.tk { min-width: 0; }
-.tk .bar { height: 6px; border-radius: 3px; background: var(--chalk-2); overflow: hidden; margin-bottom: 3px; }
-.tk .bar span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
-.tk .n { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tk .n.none { color: var(--ink-3); }
-.pr { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.pr .euro { font-size: 15px; font-weight: 650; white-space: nowrap; }
-.pr .tier { display: inline-flex; gap: 3px; }
-.pr .tier i { width: 7px; height: 7px; border-radius: 50%; background: var(--chalk-2); border: 1px solid var(--steel); }
-.pr .tier i.on { background: var(--ink); border-color: var(--ink); }
-.pr .tier.l1 i.on { background: var(--plate-green); border-color: var(--plate-green); }
-.pr .tier.l34 i.on { background: var(--plate-red); border-color: var(--plate-red); }
-@media (max-width: 559px) {
-  .brow { grid-template-columns: 48px minmax(0, 1fr) 92px; grid-template-rows: auto auto; gap: 2px 10px; }
-  .brow .t, .brow .lanes { grid-row: 1 / span 2; }
-  .brow .tk { grid-column: 3; grid-row: 1; }
-  .brow .pr { grid-column: 3; grid-row: 2; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; }
-  .lanes { flex-direction: column; align-items: flex-start; gap: 3px; }
-  .lanes .q { gap: 2px; }
-  .lanes .q + .q { margin-left: 4px; }
-  .lanes .num { font-size: 13px; }
-  .brow .t { font-size: 16px; }
-  .pr .euro { font-size: 14px; }
-}
+@media (prefers-reduced-motion: reduce) { .bandgrid .bar { transition: none; } }
 
 /* Wer belegt */
 .dep { width: 100%; border-collapse: collapse; }
@@ -252,13 +257,19 @@ footer a { color: var(--ink-2); }
     <p class="l4">Quelle: Belegungsplan und Ticketshop der Bädergesellschaft Düsseldorf. Wer an der Kasse zahlt, ist nicht mitgezählt.</p>
   </div>
 
-  <div class="seg" id="daySeg" role="group" aria-label="Tag"></div>
-
-  <section id="board">
-    <h2>Bahnen und Tickets</h2>
-    <p class="sub">Je Stunde: freie Bahnen im 25-m-Becken je Viertelstunde, verkaufte Online-Tickets (Kontingent 75) und Preisstufe.</p>
-    <div id="boardBanner"></div>
-    <div id="boardList"></div>
+  <section id="band">
+    <div class="bandtabs" id="bandTabs" role="tablist" aria-label="Tag"></div>
+    <p class="bandread" id="bandRead" aria-live="polite"></p>
+    <div class="bandbest" id="bandBest"></div>
+    <div class="bandbox" id="bandBox" tabindex="0" role="img" aria-label="Freie Bahnen je Viertelstunde"></div>
+    <div class="bandbase"></div>
+    <div class="bandhours" id="bandHours"></div>
+    <p class="bandlabel">Freie Bahnen im 25-m-Becken, je Viertelstunde</p>
+    <div class="tkbox" id="tkBox" role="img" aria-label="Verkaufte Online-Tickets je Stunde"></div>
+    <div class="bandbase"></div>
+    <p class="bandlabel">Verkaufte Online-Tickets je Einlassstunde (Kontingent 75)</p>
+    <p class="bandempty hidden" id="bandEmpty"></p>
+    <details id="bandTable"><summary>Als Tabelle</summary><div class="tablewrap"></div></details>
   </section>
 
   <section id="who">
@@ -368,8 +379,9 @@ function renderLead() {
   if (row && row.tickets) {
     const t = row.tickets;
     l2.textContent = t.sold + " " + plural(t.sold, "Online-Ticket", "Online-Tickets") +
-      " für " + span(row.start, row.end) + " Uhr verkauft, Preisstufe " + t.tier +
-      " von 4 (" + euro(t.price_cents) + ").";
+      " für " + span(row.start, row.end) + " Uhr verkauft" +
+      (t.tier != null ? ", Preisstufe " + t.tier + " von 4" : "") +
+      " (" + euro(t.price_cents) + ").";
   } else if (sameDay && day.status === "geöffnet" && !(startMin != null && nowMin < startMin)) {
     l2.textContent = "Kein Einlass mehr, Kassenschluss ist eine Stunde vor Schließung.";
   }
@@ -383,108 +395,300 @@ function renderLead() {
     l3.append(document.createTextNode(prefix + ": "));
     l3.append(el("b", null, span(best.start, best.end) + " Uhr"));
     let tail = ", im Schnitt " + num(best.avg_free) + " von " + total + " Bahnen frei";
-    if (best.tickets) tail += ", Preisstufe " + best.tickets.tier;
+    if (best.tickets && best.tickets.tier != null) tail += ", Preisstufe " + best.tickets.tier;
     l3.append(document.createTextNode(tail + "."));
   }
 }
 
-function renderDays() {
-  const seg = $("#daySeg");
-  seg.textContent = "";
-  if (!data || !data.days) return;
-  const names = ["Heute", "Morgen"];
-  data.days.forEach((d, i) => {
-    const b = el("button", { type: "button" }, names[i] || d.label);
-    b.dataset.date = d.date;
-    b.setAttribute("aria-pressed", String(selectedDay() && selectedDay().date === d.date));
-    b.addEventListener("click", () => { selDate = d.date; store.set("bilk.day", selDate); renderAll(); });
-    seg.append(b);
-  });
+function pad2(n) { return String(n).padStart(2, "0"); }
+function slotKey(min) { return pad2(Math.floor(min / 60)) + ":" + pad2(min % 60); }
+function clockText(min) { return Math.floor(min / 60) + (min % 60 ? ":" + pad2(min % 60) : ""); }
+
+function bestWindow(day) {
+  if (!day || !day.best) return null;
+  const startMin = min2(day.best.start), endMin = min2(day.best.end);
+  if (startMin == null || endMin == null) return null;
+  return { start: startMin, end: endMin };
 }
 
-function lanterns(q) {
-  const wrap = el("span", { class: "q" });
-  const total = q.total;
-  const free = q.free;
-  for (let i = 0; i < total; i++) {
-    wrap.append(el("span", { class: "stroke" + (i >= free ? " occ" : "") }));
+function ticketScale() {
+  let max = 0;
+  for (const d of (data && data.days) || []) {
+    for (const r of d.rows || []) if (r.tickets) max = Math.max(max, r.tickets.sold);
   }
-  wrap.setAttribute("aria-hidden", "true");
-  return wrap;
+  return Math.max(10, max);
 }
 
-function renderBoard() {
-  const list = $("#boardList"), banner = $("#boardBanner");
-  list.textContent = ""; banner.textContent = "";
+function slotBookings(day, slot) {
+  const parts = [];
+  for (const b of day.blocks || []) {
+    if (!/^Sportbecken/i.test(b.becken || "")) continue;
+    if (b.start <= slot && slot < b.end) parts.push((b.label || "") + " Bahn " + b.lanes);
+  }
+  return parts.join(", ");
+}
+
+function rowFor(rows, slot) {
+  return (rows || []).find((r) => r.start <= slot && slot < r.end) || null;
+}
+
+let bandCtx = null;
+let bandActiveSlot = null;
+let bandBound = false;
+
+function bindBandEvents() {
+  if (!bandBound) {
+    bandBound = true;
+    const box = $("#bandBox"), tkBox = $("#tkBox");
+    [box, tkBox].forEach((host) => {
+      host.addEventListener("pointermove", (e) => {
+        if (!bandCtx) return;
+        const i = bandCtx.slotAt(host, e.clientX);
+        if (i !== bandActiveSlot) bandCtx.showSlot(i);
+      });
+      host.addEventListener("pointerleave", () => { if (bandCtx) bandCtx.clearRead(); });
+    });
+    box.addEventListener("keydown", (e) => {
+      if (!bandCtx) return;
+      if (e.key === "Escape") { bandCtx.clearRead(); return; }
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      e.preventDefault();
+      const dir = e.key === "ArrowLeft" ? -1 : 1;
+      let i = bandActiveSlot == null ? (dir > 0 ? 0 : bandCtx.size - 1) : bandActiveSlot + dir;
+      while (i >= 0 && i < bandCtx.size && !bandCtx.slotFilled(i)) i += dir;
+      if (i >= 0 && i < bandCtx.size) bandCtx.showSlot(i);
+    });
+  }
+}
+
+function renderBand() {
+  const tabs = $("#bandTabs"), read = $("#bandRead"), best = $("#bandBest");
+  const box = $("#bandBox"), hours = $("#bandHours"), empty = $("#bandEmpty");
+  const tkBox = $("#tkBox"), tableWrap = $("#bandTable .tablewrap");
+  tabs.textContent = ""; read.textContent = ""; best.textContent = "";
+  box.textContent = ""; hours.textContent = ""; empty.textContent = "";
+  tkBox.textContent = ""; tableWrap.textContent = "";
+  empty.classList.add("hidden");
+  bandCtx = null;
+  bandActiveSlot = null;
+
+  if (!data || !data.days || !data.days.length) return;
+  const todayKey = data.days[0].date;
+  if (!selDate || !dayByDate(selDate)) selDate = todayKey;
   const day = selectedDay();
-  if (!day) return;
+
+  // Tabs
+  data.days.forEach((d, i) => {
+    const label = i === 0 ? "Heute" : d.label.replace(".,", "");
+    const b = el("button", { type: "button", role: "tab", "aria-selected": String(d.date === selDate) }, label);
+    b.addEventListener("click", () => { selDate = d.date; store.set("bilk.day", selDate); renderAll(); });
+    tabs.append(b);
+  });
+
   const rows = day.rows || [];
-  if (day.status !== "geöffnet" || !rows.length) {
-    const msg = day.status !== "geöffnet"
-      ? "Geschlossen: " + (day.note || "an diesem Tag ist das Bad geschlossen.")
-      : "Für diesen Tag liegt noch kein Belegungsplan vor.";
-    banner.append(el("div", { class: "banner" }, msg));
+  if (day.status === "geschlossen" || !rows.length) {
+    empty.textContent = day.status === "geschlossen"
+      ? "Geschlossen." + (day.note ? " " + day.note : "")
+      : "Für diesen Tag gibt es noch keinen Plan.";
+    empty.classList.remove("hidden");
     return;
   }
-  const bestStart = day.best ? day.best.start : null;
 
-  rows.forEach((row) => {
-    const wrap = el("div", { class: "brow" });
+  const startMin = min2(day.open_start), endMin = min2(day.open_end);
+  if (startMin == null || endMin == null || startMin >= endMin) return;
+  const length = endMin - startMin;
+  const N = Math.round(length / 15);
+  const isToday = day.date === todayKey;
+  const nowMin = min2(berlinNow(Date.now() / 1000));
+  const win = bestWindow(day);
 
-    // Zeit + Markierung
-    const t = el("div", { class: "t" });
-    t.append(el("span", null, span(row.start, row.end)));
-    if (row.now) t.append(el("span", { class: "tag" }, "jetzt"));
-    else if (bestStart && row.start === bestStart) t.append(el("span", { class: "tag best" }, "beste Zeit"));
-    wrap.append(t);
+  // Viertelstunden-Werte
+  const qMap = new Map();
+  for (const r of rows) for (const q of r.quarters || []) qMap.set(q.slot, q);
+  const slots = [];
+  for (let i = 0; i < N; i++) {
+    const m = startMin + i * 15;
+    slots.push({ key: slotKey(m), start: m, q: qMap.get(slotKey(m)) || null });
+  }
+  const inWin = (s) => !!win && s >= win.start && s < win.end;
 
-    // Bahnen
-    const lanes = el("div", { class: "lanes" });
-    const qs = row.quarters || [];
-    const qwrap = el("span", null);
-    qwrap.style.display = "inline-flex";
-    qs.forEach((q) => qwrap.append(lanterns(q)));
-    lanes.append(qwrap);
-    const frees = qs.map((q) => q.free);
-    const lo = frees.length ? Math.min(...frees) : 0;
-    const hi = frees.length ? Math.max(...frees) : 0;
-    const numEl = el("span", { class: "num" });
-    numEl.append(document.createTextNode(lo === hi ? String(hi) + " frei" : lo + "–" + hi + " frei"));
-    lanes.append(numEl);
-    wrap.append(lanes);
+  // Beste Zeit über dem Band
+  if (win) {
+    const i0 = Math.round((win.start - startMin) / 15);
+    const i1 = Math.round((win.end - startMin) / 15);
+    const left = i0 / N * 100, width = (i1 - i0) / N * 100;
+    const bl = el("span", { class: "bl" });
+    bl.style.left = left + "%"; bl.style.width = width + "%";
+    best.append(bl);
+    const bt = el("span", { class: "bt" }, "beste Zeit " + span(day.best.start, day.best.end));
+    if (left > 70) { bt.style.left = "auto"; bt.style.right = (100 - left - width) + "%"; }
+    else bt.style.left = left + "%";
+    best.append(bt);
+  }
 
-    // Tickets
-    const tk = el("div", { class: "tk" });
-    if (row.tickets) {
-      const tkd = row.tickets;
-      const bar = el("div", { class: "bar" });
-      const fill = el("span");
-      fill.style.width = Math.max(0, Math.min(100, (tkd.sold / Math.max(1, tkd.total)) * 100)) + "%";
-      bar.append(fill);
-      tk.append(bar);
-      tk.append(el("span", { class: "n" }, tkd.sold + " von " + tkd.total));
-    } else if (row.past) {
-      tk.append(el("span", { class: "n none" }, "–"));
+  // Hauptbalken
+  const grid = el("div", { class: "bandgrid", role: "presentation" });
+  grid.style.gridTemplateColumns = "repeat(" + N + ", minmax(0, 1fr))";
+  slots.forEach((s) => {
+    const bar = el("span", { class: "bar" });
+    if (!s.q) {
+      bar.classList.add("gap");
+      bar.style.transform = "scaleY(0)";
     } else {
-      tk.append(el("span", { class: "n none" }, "kein Einlass"));
+      const ratio = s.q.total ? s.q.free / s.q.total : 0;
+      bar.style.transform = "scaleY(" + Math.max(ratio, 0.015) + ")";
     }
-    wrap.append(tk);
-
-    // Preis
-    const pr = el("div", { class: "pr" });
-    if (row.tickets) {
-      pr.append(el("span", { class: "euro" }, euro(row.tickets.price_cents)));
-      const tierEl = el("span", { class: "tier" + (row.tickets.tier === 1 ? " l1" : row.tickets.tier >= 3 ? " l34" : "") });
-      for (let i = 1; i <= 4; i++) tierEl.append(el("i", { class: i <= row.tickets.tier ? "on" : "" }));
-      tierEl.setAttribute("aria-label", "Preisstufe " + row.tickets.tier + " von 4");
-      pr.append(tierEl);
-    }
-    wrap.append(pr);
-
-    if (row.past) wrap.classList.add("past");
-    if (row.now) wrap.classList.add("now");
-    list.append(wrap);
+    if (isToday && s.start + 15 <= nowMin) bar.classList.add("dim");
+    if (inWin(s.start)) bar.classList.add("best");
+    grid.append(bar);
   });
+  box.append(grid);
+  const bars = [...grid.children];
+
+  // Jetzt-Strich
+  if (isToday && nowMin >= startMin && nowMin <= endMin) {
+    const pct = (nowMin - startMin) / length * 100;
+    const mk = el("span", { class: "bandnow" });
+    mk.style.left = pct + "%";
+    const lb = el("span", null, "jetzt");
+    if (pct > 85) { lb.style.left = "auto"; lb.style.right = "4px"; }
+    else if (pct < 15) { lb.style.left = "4px"; lb.style.transform = "none"; }
+    mk.append(lb);
+    box.append(mk);
+  }
+
+  // Stundenmarken
+  const marks = [];
+  for (let m = startMin; m <= endMin; m += 15) {
+    if (m === startMin) { marks.push(m); continue; }
+    if (m % 60 === 0 && (m / 60) % 3 === 0 && m <= endMin) marks.push(m);
+  }
+  marks.forEach((m, i) => {
+    const pct = (m - startMin) / length * 100;
+    const sp = el("span", null, clockText(m));
+    if (pct > 88) { sp.style.left = "auto"; sp.style.right = "0"; }
+    else sp.style.left = pct + "%";
+    if (i === 0) sp.classList.add("first");
+    hours.append(sp);
+  });
+
+  // Ticketbalken
+  const skala = ticketScale();
+  const tkGrid = el("div", { class: "tkgrid", role: "presentation" });
+  tkGrid.style.gridTemplateColumns = "repeat(" + N + ", minmax(0, 1fr))";
+  rows.forEach((r) => {
+    if (!r.tickets) return;
+    const a = min2(r.start), b = min2(r.end);
+    if (a == null || b == null) return;
+    const i0 = Math.round((a - startMin) / 15), i1 = Math.round((b - startMin) / 15);
+    const cols = Math.max(1, i1 - i0);
+    const cell = el("div", { class: "tkc" });
+    cell.style.gridColumn = (i0 + 1) + " / span " + cols;
+    const tk = el("div", { class: "tk" });
+    const ratio = Math.max(r.tickets.sold / skala, 0.015);
+    tk.style.transform = "scaleY(" + ratio + ")";
+    if (isToday && b <= nowMin) tk.classList.add("dim");
+    if (win && a >= win.start && a < win.end) tk.classList.add("best");
+    const v = el("span", { class: "tkv" }, String(r.tickets.sold));
+    v.style.bottom = (ratio * 100) + "%";
+    cell.append(tk, v);
+    tkGrid.append(cell);
+  });
+  if (tkGrid.children.length) tkBox.append(tkGrid);
+
+  // Ablesung
+  const defaultRead = () => {
+    read.textContent = "";
+    if (isToday) {
+      const free = data.now ? data.now.lanes_free : null;
+      const total = data.now ? data.now.lanes_total : null;
+      const cur = (nowMin != null && rowFor(rows, slotKey(nowMin))) || rows.find((r) => r.now) || null;
+      read.append(document.createTextNode("Jetzt: "));
+      if (free != null && total != null) {
+        read.append(el("b", null, free + " von " + total + " Bahnen"));
+        read.append(document.createTextNode(" frei"));
+      } else {
+        read.append(document.createTextNode("keine aktuellen Bahnwerte"));
+      }
+      if (cur && cur.tickets) {
+        const t = cur.tickets;
+        read.append(document.createTextNode(" · "));
+        read.append(el("b", null, t.sold + " von " + t.total + " Online-Tickets"));
+        read.append(document.createTextNode(" für " + span(cur.start, cur.end) + " Uhr · " +
+          euro(t.price_cents) + (t.tier != null ? " (Stufe " + t.tier + " von 4)" : "")));
+      }
+      return;
+    }
+    if (!day.best) return;
+    const avg = day.best.avg_free;
+    const total = day.best.quarters && day.best.quarters[0] ? day.best.quarters[0].total : null;
+    read.append(document.createTextNode("Beste Zeit: "));
+    read.append(el("b", null, span(day.best.start, day.best.end) + " Uhr"));
+    if (avg != null) read.append(document.createTextNode(", im Schnitt " +
+      (total != null ? num(avg) + " von " + total + " Bahnen" : num(avg) + " Bahnen") + " frei."));
+    else read.append(document.createTextNode("."));
+  };
+  defaultRead();
+
+  bandActiveSlot = null;
+  const showSlot = (i) => {
+    const s = slots[i];
+    if (!s || !s.q) return;
+    bandActiveSlot = i;
+    read.textContent = "";
+    read.append(el("b", null, span(slotKey(s.start), slotKey(s.start + 15))));
+    read.append(document.createTextNode(" · "));
+    read.append(el("b", null, s.q.free + " von " + s.q.total + " Bahnen"));
+    read.append(document.createTextNode(" frei"));
+    const who = slotBookings(day, s.key);
+    if (who) read.append(document.createTextNode(" · " + who));
+    const t = rowFor(rows, s.key);
+    if (t && t.tickets) {
+      read.append(document.createTextNode(" · " + span(t.start, t.end) + " Uhr: "));
+      read.append(el("b", null, t.tickets.sold + " von " + t.tickets.total + " Tickets"));
+      read.append(document.createTextNode(", " + euro(t.tickets.price_cents)));
+    }
+    bars.forEach((b, j) => b.classList.toggle("dim", j !== i || (isToday && slots[j].start + 15 <= nowMin)));
+  };
+  const clearRead = () => { bars.forEach((b, j) => b.classList.toggle("dim", isToday && slots[j].start + 15 <= nowMin)); bandActiveSlot = null; defaultRead(); };
+  const slotAt = (boxEl, clientX) => {
+    const r = boxEl.getBoundingClientRect();
+    return Math.max(0, Math.min(N - 1, Math.floor((clientX - r.left) / r.width * N)));
+  };
+  bandCtx = {
+    showSlot, clearRead, slotAt,
+    size: N,
+    slotFilled: (i) => !!(slots[i] && slots[i].q),
+  };
+  bindBandEvents();
+
+  // Tabelle
+  const t = el("table", { class: "dep" });
+  const thead = el("thead");
+  const htr = el("tr");
+  ["Zeit", "Freie Bahnen", "Tickets", "Preis"].forEach((h) => htr.append(el("th", null, h)));
+  thead.append(htr); t.append(thead);
+  const tbody = el("tbody");
+  rows.forEach((r) => {
+    const tr = el("tr");
+    if (r.past) tr.classList.add("past");
+    if (r.now) tr.classList.add("now");
+    tr.append(el("td", { class: "t" }, span(r.start, r.end)));
+    const frees = (r.quarters || []).map((q) => q.free);
+    let freeText = "–";
+    if (frees.length) {
+      const lo = Math.min(...frees), hi = Math.max(...frees);
+      freeText = lo === hi ? String(hi) : lo + "–" + hi;
+    }
+    tr.append(el("td", null, freeText));
+    tr.append(el("td", null, r.tickets ? r.tickets.sold + " von " + r.tickets.total : "–"));
+    tr.append(el("td", null, r.tickets
+      ? euro(r.tickets.price_cents) + (r.tickets.tier != null ? " · Stufe " + r.tickets.tier : "")
+      : "–"));
+    tbody.append(tr);
+  });
+  t.append(tbody);
+  tableWrap.append(t);
 }
 
 function renderWho() {
@@ -517,8 +721,7 @@ function renderWho() {
 function renderAll() {
   renderStand();
   renderLead();
-  renderDays();
-  renderBoard();
+  renderBand();
   renderWho();
 }
 
