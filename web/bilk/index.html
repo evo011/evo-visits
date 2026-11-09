@@ -177,11 +177,16 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--ink); 
 .pr .tier.l1 i.on { background: var(--plate-green); border-color: var(--plate-green); }
 .pr .tier.l34 i.on { background: var(--plate-red); border-color: var(--plate-red); }
 @media (max-width: 559px) {
-  .brow { grid-template-columns: 52px minmax(0, 1fr) 84px; gap: 4px 10px; }
-  .brow .pr { grid-column: 2 / -1; flex-direction: row; align-items: center; justify-content: flex-start; gap: 8px; }
-  .lanes { gap: 6px; }
+  .brow { grid-template-columns: 48px minmax(0, 1fr) 92px; grid-template-rows: auto auto; gap: 2px 10px; }
+  .brow .t, .brow .lanes { grid-row: 1 / span 2; }
+  .brow .tk { grid-column: 3; grid-row: 1; }
+  .brow .pr { grid-column: 3; grid-row: 2; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; }
+  .lanes { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .lanes .q { gap: 2px; }
+  .lanes .q + .q { margin-left: 4px; }
   .lanes .num { font-size: 13px; }
   .brow .t { font-size: 16px; }
+  .pr .euro { font-size: 14px; }
 }
 
 /* Wer belegt */
@@ -296,9 +301,9 @@ function min2(s) {
 function span(a, b) {
   const ma = min2(a), mb = min2(b);
   if (ma == null || mb == null) return a + "–" + b;
-  const h1 = String(Math.floor(ma / 60)).padStart(2, "0"), m1 = String(ma % 60).padStart(2, "0");
-  const h2 = String(Math.floor(mb / 60)).padStart(2, "0"), m2 = String(mb % 60).padStart(2, "0");
-  return (m1 === "00" ? h1.replace(/^0/, "") : h1 + ":" + m1) + "–" + (m2 === "00" ? h2.replace(/^0/, "") : h2 + ":" + m2);
+  const h1 = String(Math.floor(ma / 60)), m1 = String(ma % 60).padStart(2, "0");
+  const h2 = String(Math.floor(mb / 60)), m2 = String(mb % 60).padStart(2, "0");
+  return (m1 === "00" ? h1 : h1 + ":" + m1) + "–" + (m2 === "00" ? h2 : h2 + ":" + m2);
 }
 function euro(cents) { return (cents / 100).toFixed(2).replace(".", ",") + " €"; }
 function num(n) { return String(n).replace(".", ","); }
@@ -427,7 +432,7 @@ function renderBoard() {
     const wrap = el("div", { class: "brow" });
 
     // Zeit + Markierung
-    const t = el("div");
+    const t = el("div", { class: "t" });
     t.append(el("span", null, span(row.start, row.end)));
     if (row.now) t.append(el("span", { class: "tag" }, "jetzt"));
     else if (bestStart && row.start === bestStart) t.append(el("span", { class: "tag best" }, "beste Zeit"));
@@ -458,6 +463,8 @@ function renderBoard() {
       bar.append(fill);
       tk.append(bar);
       tk.append(el("span", { class: "n" }, tkd.sold + " von " + tkd.total));
+    } else if (row.past) {
+      tk.append(el("span", { class: "n none" }, "–"));
     } else {
       tk.append(el("span", { class: "n none" }, "kein Einlass"));
     }
@@ -485,7 +492,7 @@ function renderWho() {
   const day = selectedDay();
   body.textContent = "";
   if (!day) { sub.textContent = "Schulen, Vereine und Kurse am gewählten Tag."; return; }
-  sub.textContent = "Schulen, Vereine und Kurse am " + day.label + ".";
+  sub.textContent = "Schulen, Vereine und Kurse am " + day.label.replace(/\.$/, "") + ".";
   const blocks = day.blocks || [];
   if (!blocks.length) {
     const tr = el("tr");

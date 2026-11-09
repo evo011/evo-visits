@@ -135,9 +135,34 @@ Optionen mit Defaults stehen in `evo/config.py`, eigene Werte in `config.json` (
 | `evo/evaluate.py` | echte Prognosegüte aus den Schnappschüssen |
 | `evo/demo.py` | Demo-Daten |
 | `web/index.html` | Dashboard (eigene SVG-Charts, hell und dunkel) |
+| `evo/bilk.py`, `evo/bilk_export.py` | Schwimm' in Bilk: Ticketshop und Belegungsplan abrufen, CSVs, Seitendaten |
+| `web/bilk/` | Board für Schwimm' in Bilk |
 
 Tests: `python3 -m unittest discover -s tests -t .`. Echte, gekürzte Antworten von EVO, Open-Meteo und OpenHolidays liegen als Fixtures unter `tests/fixtures/`.
 
+## Schwimm' in Bilk
+
+**Live:** https://evo011.github.io/evo-visits/bilk/
+
+Ein zweites Board für das Hallenbad Schwimm' in Bilk (Bädergesellschaft Düsseldorf). Echte Besucherzahlen veröffentlicht das Bad nicht. Die Seite zeigt deshalb, was öffentlich abrufbar ist:
+
+| Quelle | Inhalt | Abruf |
+|---|---|---|
+| Ticketshop `shop.baeder-duesseldorf.de/ui/dps/fullcalendar-data?articles=[{"id":"1834","quantity":1}]&start=…&end=…` | je Einlassstunde das Online-Kontingent (`totalAvailable`, meist 75, 06:30–07:00 Uhr 50), noch freie Online-Tickets (`currentlyAvailable`) und der dynamische Preis in Cent (Erwachsene: 480/544/640/704 = Preisstufe 1–4), etwa 72 Stunden im Voraus | jeder Lauf (alle 15 Minuten) |
+| Belegungsplan `www.baeder-duesseldorf.de/belegungsplan/schwimm-in-bilk/__data.json?x-sveltekit-invalidated=001` | je Viertelstunde und Bahn, ob Schulen, Vereine oder Kurse belegen, für 25-m-Becken (6 Bahnen) und Kursbecken (2), drei Tage im Voraus | höchstens einmal je Stunde (Antwort etwa 1 MB, enthält alle Bäder) |
+
+Kinder- und Erwachsenentickets teilen sich dasselbe Kontingent, eine Abfrage mit Artikel 1834 reicht. Vergangene Einlassfenster verschwinden aus der Shop-Antwort, der letzte gesehene Stand bleibt in der CSV. Wer an der Kasse zahlt, taucht nirgends auf. Die verkauften Online-Tickets sind also nur ein Ausschnitt. Ob die Preisstufe der Auslastung folgt, zeigt erst die gesammelte Historie. Der Belegungsplan ist ein SvelteKit-Datenendpunkt im devalue-Format (flaches Array, Werte als Indizes), `evo/bilk.py` dekodiert ihn.
+
+Die Daten liegen „nur bei Änderung“ als Monats-CSVs im Repo: `data/bilk-tickets-YYYY-MM.csv` (`ts,local_time,window_start,window_end,total,available,price_cents`), `data/bilk-lanes-YYYY-MM.csv` (`ts,date,becken,slot,lanes_total,lanes_free,bookings`) und `data/bilk-days-YYYY-MM.csv` (`ts,date,status,open_start,open_end,note`). Eine Zeile kommt nur dazu, wenn sich der Wert für dasselbe Fenster, denselben Slot oder Tag geändert hat.
+
+```bash
+python3 evo_visits.py bilk-collect                 # Tickets abrufen, Belegungsplan zur vollen Stunde
+python3 evo_visits.py bilk-collect --force-lanes   # Belegungsplan sofort mit abrufen
+python3 evo_visits.py bilk-export --out site       # site/bilk/ (index.html + api/bilk.json) bauen
+```
+
+Im Workflow laufen beide Schritte mit `continue-on-error`: Fällt die Bädergesellschaft aus, deployt die EVO-Seite trotzdem. Die Seite liegt unter `web/bilk/`, nutzt Schrift, Farben und Hell/Dunkel-Einstellung der EVO-Seite und den Service Worker im Wurzelordner.
+
 ## Fair Use
 
-Ein Abruf alle 10 bis 15 Minuten ist weniger Last als ein Mensch, der die Seite offen hat. Das Tool ist für den privaten Gebrauch. Bitte das Intervall nicht verkürzen.
+Ein Abruf alle 10 bis 15 Minuten ist weniger Last als ein Mensch, der die Seite offen hat. Das Tool ist für den privaten Gebrauch. Bitte das Intervall nicht verkürzen. Den großen Belegungsplan holt der Sammler höchstens einmal je Stunde.

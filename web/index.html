@@ -134,6 +134,11 @@ header {
 #clubbar { display: flex; gap: 0; margin-top: 10px; }
 #clubbar .seg { flex: 1; }
 #gymSel { max-width: 40%; }
+@media (max-width: 559px) {
+  #clubbar { gap: 4px; }
+  #clubbar .seg { flex: 0 0 auto; }
+  #gymSel { flex: 1 1 0; min-width: 0; max-width: none; }
+}
 h2 { font-size: 22px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 2px; }
 .sub { color: var(--text-secondary); font-size: 13px; margin: 0 0 12px; }
 h3 { font-size: 15px; font-weight: 650; margin: 14px 0 4px; color: var(--ink); }
