@@ -643,3 +643,67 @@ ts,date,becken,slot,lanes_total,lanes_free,bookings
 1794459627,2026-11-14,Sportbecken Bilk,15:15,6,4,1:schwimmverein:SGR Schwimmen; 2:schwimmverein:SGR Schwimmen
 1794459627,2026-11-14,Sportbecken Bilk,15:30,6,4,1:schwimmverein:SGR Schwimmen; 2:schwimmverein:SGR Schwimmen
 1794459627,2026-11-14,Sportbecken Bilk,15:45,6,6,
+1794546029,2026-11-15,Kursbecken Bilk,08:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,08:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,08:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,08:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,09:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,09:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,09:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,09:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,10:00,2,0,1:bgd:Aqua Power; 2:bgd:Aqua Power
+1794546029,2026-11-15,Kursbecken Bilk,10:15,2,0,1:bgd:Aqua Power; 2:bgd:Aqua Power
+1794546029,2026-11-15,Kursbecken Bilk,10:30,2,0,1:bgd:Aqua Power; 2:bgd:Aqua Power
+1794546029,2026-11-15,Kursbecken Bilk,10:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,11:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,11:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,11:30,2,0,1:bgd:Aqua Cycling; 2:bgd:Aqua Cycling
+1794546029,2026-11-15,Kursbecken Bilk,11:45,2,0,1:bgd:Aqua Cycling; 2:bgd:Aqua Cycling
+1794546029,2026-11-15,Kursbecken Bilk,12:00,2,0,1:bgd:Aqua Cycling; 2:bgd:Aqua Cycling
+1794546029,2026-11-15,Kursbecken Bilk,12:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,12:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,12:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,13:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,13:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,13:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,13:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,14:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,14:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,14:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,14:45,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,15:00,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,15:15,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,15:30,2,2,
+1794546029,2026-11-15,Kursbecken Bilk,15:45,2,2,
+1794546029,2026-11-15,Sportbecken Bilk,08:00,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,08:15,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,08:30,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,08:45,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,09:00,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,09:15,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,09:30,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,09:45,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,10:00,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,10:15,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,10:30,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,10:45,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,11:00,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,11:15,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,11:30,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,11:45,6,5,1:externe-nutzer:Schwimmschule Wasserlust
+1794546029,2026-11-15,Sportbecken Bilk,12:00,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,12:15,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,12:30,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,12:45,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,13:00,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,13:15,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,13:30,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,13:45,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,14:00,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,14:15,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,14:30,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,14:45,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,15:00,6,5,1:externe-nutzer:Krokodil Schwimmschule
+1794546029,2026-11-15,Sportbecken Bilk,15:15,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,15:30,6,6,
+1794546029,2026-11-15,Sportbecken Bilk,15:45,6,6,
